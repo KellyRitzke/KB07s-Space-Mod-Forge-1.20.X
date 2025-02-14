@@ -1,15 +1,19 @@
 package net.kb07.kbspace;
 
 import com.mojang.logging.LogUtils;
+import net.kb07.kbspace.block.ModBlocks;
+import net.kb07.kbspace.item.ModCreativeModeTabs;
+import net.kb07.kbspace.item.ModItems;
+import net.kb07.kbspace.worldgen.biome.surface.ModSurfaceRules;
+import net.minecraft.data.worldgen.SurfaceRuleData;
+import net.minecraft.world.level.levelgen.SurfaceSystem;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
 import net.minecraftforge.event.server.ServerStartingEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
@@ -26,6 +30,11 @@ public class KBSpace {
     public KBSpace() {
         IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
 
+        ModItems.register(modEventBus);
+        ModBlocks.register(modEventBus);
+
+        ModCreativeModeTabs.register(modEventBus);
+
         // Register the commonSetup method for modloading
         modEventBus.addListener(this::commonSetup);
 
@@ -37,6 +46,8 @@ public class KBSpace {
     }
 
     private void commonSetup(final FMLCommonSetupEvent event) {
+
+
     }
 
     // Add the example block item to the building blocks tab
