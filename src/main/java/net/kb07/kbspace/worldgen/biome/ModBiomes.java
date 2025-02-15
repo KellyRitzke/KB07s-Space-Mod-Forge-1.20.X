@@ -16,13 +16,9 @@ public class ModBiomes {
             new ResourceLocation(KBSpace.MOD_ID, "moon"));
 
     public static void bootstrap(BootstapContext<Biome> context) {
-        context.register(MOON, moon(context));
-    }
 
-    public static void globalOverworldGeneration(BiomeGenerationSettings.Builder builder) {
-        BiomeDefaultFeatures.addDefaultCarversAndLakes(builder);
-        BiomeDefaultFeatures.addDefaultCrystalFormations(builder);
-        BiomeDefaultFeatures.addDefaultMonsterRoom(builder);
+        context.register(MOON, moon(context));
+
     }
 
     private static Biome moon(BootstapContext<Biome> context) {
@@ -31,14 +27,12 @@ public class ModBiomes {
         BiomeGenerationSettings.Builder biomeBuilder =
                 new BiomeGenerationSettings.Builder(context.lookup(Registries.PLACED_FEATURE), context.lookup(Registries.CONFIGURED_CARVER));
 
-        globalOverworldGeneration(biomeBuilder);
-
-        biomeBuilder.addFeature(GenerationStep.Decoration.UNDERGROUND_ORES, ModPlacedFeatures.MOON_IRON_ORE_PLACED_KEY);
+        BiomeDefaultFeatures.addDefaultCarversAndLakes(biomeBuilder);
 
         return new Biome.BiomeBuilder()
                 .hasPrecipitation(false)
-                .downfall(0.0f)
-                .temperature(0.0f)
+                .downfall(0.5f)
+                .temperature(0.5f)
                 .generationSettings(biomeBuilder.build())
                 .mobSpawnSettings(spawnBuilder.build())
                 .specialEffects((new BiomeSpecialEffects.Builder())

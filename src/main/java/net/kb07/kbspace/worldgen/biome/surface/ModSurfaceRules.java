@@ -1,10 +1,13 @@
 package net.kb07.kbspace.worldgen.biome.surface;
 
+import net.kb07.kbspace.KBSpace;
 import net.kb07.kbspace.worldgen.biome.ModBiomes;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.levelgen.SurfaceRules;
+import net.minecraftforge.fml.common.Mod;
 
+//@Mod.EventBusSubscriber(modid = KBSpace.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD)
 public class ModSurfaceRules {
     private static final SurfaceRules.RuleSource DIRT = makeStateRule(Blocks.DIRT);
     private static final SurfaceRules.RuleSource GRASS_BLOCK = makeStateRule(Blocks.GRASS_BLOCK);

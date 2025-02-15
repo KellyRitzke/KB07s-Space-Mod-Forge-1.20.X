@@ -32,7 +32,7 @@ public class ModDimensions {
 
     public static void bootstrapType(BootstapContext<DimensionType> context) {
         context.register(KB_DIM_TYPE, new DimensionType(
-                OptionalLong.of(12000),
+                OptionalLong.of(6000),
                 false,
                 false,
                 false,
