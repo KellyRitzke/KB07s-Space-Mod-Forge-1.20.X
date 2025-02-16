@@ -13,7 +13,7 @@ import net.minecraft.world.level.levelgen.GenerationStep;
 public class ModBiomes {
 
     public static final ResourceKey<Biome> MOON = ResourceKey.create(Registries.BIOME,
-            new ResourceLocation(KBSpace.MOD_ID, "moon"));
+            new ResourceLocation(KBSpace.MOD_ID, "the_moon"));
 
     public static void bootstrap(BootstapContext<Biome> context) {
 
@@ -26,8 +26,6 @@ public class ModBiomes {
 
         BiomeGenerationSettings.Builder biomeBuilder =
                 new BiomeGenerationSettings.Builder(context.lookup(Registries.PLACED_FEATURE), context.lookup(Registries.CONFIGURED_CARVER));
-
-        BiomeDefaultFeatures.addDefaultCarversAndLakes(biomeBuilder);
 
         return new Biome.BiomeBuilder()
                 .hasPrecipitation(false)

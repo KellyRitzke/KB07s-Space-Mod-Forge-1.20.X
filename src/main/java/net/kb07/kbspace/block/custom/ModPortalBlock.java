@@ -33,12 +33,12 @@ public class ModPortalBlock extends Block {
     private void handleKBPortal(Entity player, BlockPos pPos) {
         if (player.level() instanceof ServerLevel serverLevel) {
             MinecraftServer minecraftServer = serverLevel.getServer();
-            ResourceKey<Level> resourceKey = player.level().dimension() == ModDimensions.KB_DIM_LEVEL_KEY ?
-                    Level.OVERWORLD : ModDimensions.KB_DIM_LEVEL_KEY;
+            ResourceKey<Level> resourceKey = player.level().dimension() == ModDimensions.MOON_LEVEL_KEY ?
+                    Level.OVERWORLD : ModDimensions.MOON_LEVEL_KEY;
 
             ServerLevel portalDimesnion = minecraftServer.getLevel(resourceKey);
             if (portalDimesnion != null && !player.isPassenger()) {
-                if (resourceKey == ModDimensions.KB_DIM_LEVEL_KEY) {
+                if (resourceKey == ModDimensions.MOON_LEVEL_KEY) {
                     player.changeDimension(portalDimesnion, new ModTeleporter(pPos, true));
                 } else {
                     player.changeDimension(portalDimesnion, new ModTeleporter(pPos, false));

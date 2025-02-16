@@ -5,7 +5,9 @@ import net.kb07.kbspace.worldgen.ModBiomeModifiers;
 import net.kb07.kbspace.worldgen.ModConfiguredFeatures;
 import net.kb07.kbspace.worldgen.ModPlacedFeatures;
 import net.kb07.kbspace.worldgen.biome.ModBiomes;
+import net.kb07.kbspace.worldgen.dimension.ModDimensionSpecialEffects;
 import net.kb07.kbspace.worldgen.dimension.ModDimensions;
+import net.kb07.kbspace.worldgen.noise.ModNoiseSettingsGenerator;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.RegistrySetBuilder;
 import net.minecraft.core.registries.Registries;
@@ -23,6 +25,7 @@ public class ModWorldGenProvider extends DatapackBuiltinEntriesProvider {
             .add(Registries.PLACED_FEATURE, ModPlacedFeatures::bootstrap)
             .add(Registries.BIOME, ModBiomes::bootstrap)
             .add(ForgeRegistries.Keys.BIOME_MODIFIERS, ModBiomeModifiers::bootstrap)
+            .add(Registries.NOISE_SETTINGS, ModNoiseSettingsGenerator::bootstrap)
             .add(Registries.LEVEL_STEM, ModDimensions::bootstrapStem);
     public ModWorldGenProvider(PackOutput output, CompletableFuture<HolderLookup.Provider> registries) {
         super(output, registries, BUILDER, Set.of(KBSpace.MOD_ID));

@@ -4,10 +4,12 @@ import com.mojang.logging.LogUtils;
 import net.kb07.kbspace.block.ModBlocks;
 import net.kb07.kbspace.item.ModCreativeModeTabs;
 import net.kb07.kbspace.item.ModItems;
-import net.kb07.kbspace.worldgen.biome.surface.ModSurfaceRules;
-import net.minecraft.data.worldgen.SurfaceRuleData;
-import net.minecraft.world.level.levelgen.SurfaceSystem;
+import net.kb07.kbspace.worldgen.dimension.ModDimensionSpecialEffects;
+import net.kb07.kbspace.worldgen.dimension.ModDimensions;
+import net.minecraft.client.renderer.DimensionSpecialEffects;
+import net.minecraft.world.level.dimension.DimensionType;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.DimensionSpecialEffectsManager;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
 import net.minecraftforge.event.server.ServerStartingEvent;
@@ -18,6 +20,8 @@ import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import org.slf4j.Logger;
+
+import java.lang.reflect.AnnotatedType;
 
 // The value here should match an entry in the META-INF/mods.toml file
 @Mod(KBSpace.MOD_ID)
@@ -47,7 +51,6 @@ public class KBSpace {
 
     private void commonSetup(final FMLCommonSetupEvent event) {
 
-
     }
 
     // Add the example block item to the building blocks tab
@@ -64,6 +67,7 @@ public class KBSpace {
     public static class ClientModEvents {
         @SubscribeEvent
         public static void onClientSetup(FMLClientSetupEvent event) {
+
         }
     }
 }
