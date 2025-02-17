@@ -1,44 +1,24 @@
 package net.kb07.kbspace.worldgen.dimension;
 
-import it.unimi.dsi.fastutil.objects.Object2ObjectArrayMap;
-import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import net.kb07.kbspace.KBSpace;
-import net.kb07.kbspace.item.ModItems;
-import net.minecraft.Util;
 import net.minecraft.client.renderer.DimensionSpecialEffects;
 import net.minecraft.core.Registry;
-import net.minecraft.core.registries.Registries;
-import net.minecraft.data.worldgen.BootstapContext;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.Mth;
-import net.minecraft.world.item.BlockItem;
-import net.minecraft.world.item.Item;
-import net.minecraft.world.level.biome.Biome;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.dimension.BuiltinDimensionTypes;
-import net.minecraft.world.level.dimension.DimensionType;
-import net.minecraft.world.level.dimension.LevelStem;
-import net.minecraft.world.level.levelgen.NoiseGeneratorSettings;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.registries.*;
 
-import javax.annotation.Nullable;
+import java.lang.reflect.Field;
+import java.util.Map;
 import java.util.function.BiFunction;
 
 public class ModDimensionSpecialEffects extends DimensionSpecialEffects {
 
-    public static final ResourceKey<Registry<DimensionSpecialEffects>> DIM_SPECIAL_EFFECT = ResourceKey.createRegistryKey(new ResourceLocation("dim_special_effect"));
+    public static final DimensionSpecialEffects MOON_EFFECT = new ModDimensionSpecialEffects(
+            Float.NaN, true, SkyType.NORMAL, true, false, (vec, worldTime) -> vec, (x, z) -> false);
+
+
     protected static final BiFunction<Integer, Integer, Boolean> FOGGY_FALSE = (x, z) -> false;
     protected static final BiFunction<Integer, Integer, Boolean> FOGGY_TRUE = (x, z) -> true;
-
-    public static final DimensionSpecialEffects MOON = new ModDimensionSpecialEffects(Float.NaN, true, SkyType.NONE, true, false, (vec, worldTime) -> {
-        return vec;
-    }, FOGGY_FALSE);
-
 
 
     protected final BiFunction<Vec3, Float, Vec3> fogColorBrightness;
@@ -59,4 +39,54 @@ public class ModDimensionSpecialEffects extends DimensionSpecialEffects {
     public boolean isFoggyAt(int x, int z) {
         return this.foggyAtPos.apply(x, z);
     }
+
+    public boolean renderSky() {
+        return true; // ✅ This enables custom sky rendering
+    }
+
+    // Manually register the custom effect in the EFFECTS map
+    public static void register() {
+        try {
+            ResourceLocation id = new ResourceLocation(KBSpace.MOD_ID, "moon_effect");
+
+            Field effectsField = DimensionSpecialEffects.class.getDeclaredField("EFFECTS");
+            effectsField.setAccessible(true);
+
+            @SuppressWarnings("unchecked")
+            Map<ResourceLocation, DimensionSpecialEffects> effectsMap = (Map<ResourceLocation, DimensionSpecialEffects>) effectsField.get(null);
+
+            effectsMap.put(id, MOON_EFFECT);
+            System.out.println("✅ Custom Dimension Effect registered: " + id);
+
+            // Debug: Print all registered effects
+            System.out.println("📜 Registered Dimension Effects:");
+            for (ResourceLocation key : effectsMap.keySet()) {
+                System.out.println("  - " + key);
+            }
+
+        } catch (Exception e) {
+            System.err.println("❌ Failed to register Custom Dimension Effect!");
+            e.printStackTrace();
+        }
+    }
+
+    public static void debugPrintEffects() {
+        try {
+            Field effectsField = DimensionSpecialEffects.class.getDeclaredField("EFFECTS");
+            effectsField.setAccessible(true);
+
+            @SuppressWarnings("unchecked")
+            Map<ResourceLocation, DimensionSpecialEffects> effectsMap = (Map<ResourceLocation, DimensionSpecialEffects>) effectsField.get(null);
+
+            System.out.println("🔍 Listing all registered Dimension Special Effects:");
+            for (ResourceLocation key : effectsMap.keySet()) {
+                System.out.println(" - " + key.toString());
+            }
+
+        } catch (Exception e) {
+            System.err.println("❌ Error retrieving special effects list!");
+            e.printStackTrace();
+        }
+    }
+
 }

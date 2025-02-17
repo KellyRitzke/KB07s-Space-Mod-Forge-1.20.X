@@ -1,29 +1,23 @@
 package net.kb07.kbspace.worldgen.dimension;
 
-import com.google.common.collect.ImmutableMap;
 import com.mojang.datafixers.util.Pair;
 import net.kb07.kbspace.KBSpace;
 import net.kb07.kbspace.worldgen.biome.ModBiomes;
 import net.kb07.kbspace.worldgen.noise.ModNoiseSettingsGenerator;
-import net.minecraft.client.renderer.DimensionSpecialEffects;
 import net.minecraft.core.HolderGetter;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.data.worldgen.BootstapContext;
-import net.minecraft.data.worldgen.NoiseData;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.util.valueproviders.ConstantInt;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.*;
-import net.minecraft.world.level.dimension.BuiltinDimensionTypes;
 import net.minecraft.world.level.dimension.DimensionType;
 import net.minecraft.world.level.dimension.LevelStem;
 import net.minecraft.world.level.levelgen.NoiseBasedChunkGenerator;
 import net.minecraft.world.level.levelgen.NoiseGeneratorSettings;
-import net.minecraftforge.client.event.RegisterDimensionSpecialEffectsEvent;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.OptionalLong;
 
@@ -37,8 +31,7 @@ public class ModDimensions {
 
     public static void bootstrapType(BootstapContext<DimensionType> context) {
 
-        context.register(MOON_TYPE, new DimensionType(
-                OptionalLong.of(6000),
+        context.register(MOON_TYPE, new DimensionType(OptionalLong.empty(),
                 false,
                 false,
                 false,
@@ -50,7 +43,7 @@ public class ModDimensions {
                 384,
                 384,
                 BlockTags.INFINIBURN_OVERWORLD,
-                BuiltinDimensionTypes.END_EFFECTS,
+                new ResourceLocation(KBSpace.MOD_ID, "moon_effect"),
                 1.0f,
                 new DimensionType.MonsterSettings(false, false, ConstantInt.of(0), 0)));
 
