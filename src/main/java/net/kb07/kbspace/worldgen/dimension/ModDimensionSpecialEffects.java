@@ -1,17 +1,21 @@
 package net.kb07.kbspace.worldgen.dimension;
 
+import com.mojang.blaze3d.vertex.PoseStack;
 import net.kb07.kbspace.KBSpace;
+import net.minecraft.client.Camera;
+import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.DimensionSpecialEffects;
-import net.minecraft.core.Registry;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.phys.Vec3;
+import org.joml.Matrix4f;
 
 import java.lang.reflect.Field;
 import java.util.Map;
 import java.util.function.BiFunction;
 
 public class ModDimensionSpecialEffects extends DimensionSpecialEffects {
+
+    private final ModSkyRenderer skyRenderer;
 
     public static final DimensionSpecialEffects MOON_EFFECT = new ModDimensionSpecialEffects(
             Float.NaN, true, SkyType.NORMAL, true, false, (vec, worldTime) -> vec, (x, z) -> false);
@@ -28,6 +32,7 @@ public class ModDimensionSpecialEffects extends DimensionSpecialEffects {
         super(cloudLevel, hasGround, skyType, brightLightmap, ambientLight);
         this.fogColorBrightness = fogColorBrightness;
         this.foggyAtPos = foggyAtPos;
+        this.skyRenderer = new ModSkyRenderer();
     }
 
     @Override
@@ -40,7 +45,8 @@ public class ModDimensionSpecialEffects extends DimensionSpecialEffects {
         return this.foggyAtPos.apply(x, z);
     }
 
-    public boolean renderSky() {
+    public boolean renderSky(ClientLevel level, int ticks, float partialTick, PoseStack poseStack, Camera camera, Matrix4f projectionMatrix, boolean isFoggy, Runnable setupFog) {
+        this.skyRenderer.renderSky(level, ticks, partialTick, poseStack, camera, projectionMatrix, isFoggy, setupFog);
         return true; // ✅ This enables custom sky rendering
     }
 
@@ -56,35 +62,10 @@ public class ModDimensionSpecialEffects extends DimensionSpecialEffects {
             Map<ResourceLocation, DimensionSpecialEffects> effectsMap = (Map<ResourceLocation, DimensionSpecialEffects>) effectsField.get(null);
 
             effectsMap.put(id, MOON_EFFECT);
-            System.out.println("✅ Custom Dimension Effect registered: " + id);
 
-            // Debug: Print all registered effects
-            System.out.println("📜 Registered Dimension Effects:");
-            for (ResourceLocation key : effectsMap.keySet()) {
-                System.out.println("  - " + key);
-            }
 
         } catch (Exception e) {
             System.err.println("❌ Failed to register Custom Dimension Effect!");
-            e.printStackTrace();
-        }
-    }
-
-    public static void debugPrintEffects() {
-        try {
-            Field effectsField = DimensionSpecialEffects.class.getDeclaredField("EFFECTS");
-            effectsField.setAccessible(true);
-
-            @SuppressWarnings("unchecked")
-            Map<ResourceLocation, DimensionSpecialEffects> effectsMap = (Map<ResourceLocation, DimensionSpecialEffects>) effectsField.get(null);
-
-            System.out.println("🔍 Listing all registered Dimension Special Effects:");
-            for (ResourceLocation key : effectsMap.keySet()) {
-                System.out.println(" - " + key.toString());
-            }
-
-        } catch (Exception e) {
-            System.err.println("❌ Error retrieving special effects list!");
             e.printStackTrace();
         }
     }

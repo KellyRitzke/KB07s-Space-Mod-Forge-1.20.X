@@ -5,21 +5,33 @@ import net.kb07.kbspace.block.ModBlocks;
 import net.kb07.kbspace.item.ModCreativeModeTabs;
 import net.kb07.kbspace.item.ModItems;
 import net.kb07.kbspace.worldgen.dimension.ModDimensionSpecialEffects;
-import net.kb07.kbspace.worldgen.dimension.ModSkyRenderer;
+import net.kb07.kbspace.worldgen.dimension.ModDimensions;
+import net.kb07.kbspace.worldgen.dimension.util.PlayerGravityHandler;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.DimensionSpecialEffects;
-import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.FlyingMob;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.ai.attributes.Attribute;
+import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.animal.Chicken;
+import net.minecraft.world.entity.animal.FlyingAnimal;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RegisterDimensionSpecialEffectsEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
 import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.event.entity.EntityEvent;
+import net.minecraftforge.event.entity.living.LivingEntityUseItemEvent;
 import net.minecraftforge.event.server.ServerStartingEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
@@ -28,8 +40,6 @@ import org.slf4j.Logger;
 
 import java.lang.reflect.Field;
 import java.util.Map;
-
-import static net.kb07.kbspace.worldgen.dimension.ModDimensionSpecialEffects.debugPrintEffects;
 
 // The value here should match an entry in the META-INF/mods.toml file
 @Mod(KBSpace.MOD_ID)
@@ -50,6 +60,9 @@ public class KBSpace {
 
         // Register the commonSetup method for modloading
         modEventBus.addListener(this::commonSetup);
+
+        ModCommonEvents.register();
+
 
         // Register ourselves for server and other game events we are interested in
         MinecraftForge.EVENT_BUS.register(this);
@@ -79,9 +92,7 @@ public class KBSpace {
 
         @SubscribeEvent
         public static void registerDimensionEffects(RegisterDimensionSpecialEffectsEvent event) {
-            System.out.println("✅ Registering custom dimension effect...");
             event.register(new ResourceLocation(KBSpace.MOD_ID, "moon_effect"), ModDimensionSpecialEffects.MOON_EFFECT);
-            System.out.println("🌌 Custom dimension effect successfully registered!");
         }
 
         @SubscribeEvent
@@ -89,7 +100,6 @@ public class KBSpace {
             event.enqueueWork(() -> {
                 ModDimensionSpecialEffects.register(); // Ensure registration
                 if (Minecraft.getInstance().level != null) {
-                    System.out.println("✅ Forcing Moon Effect!");
                     Field effectsField;
                     try {
                         effectsField = DimensionSpecialEffects.class.getDeclaredField("EFFECTS");
@@ -99,33 +109,77 @@ public class KBSpace {
                         Map<ResourceLocation, DimensionSpecialEffects> effectsMap = (Map<ResourceLocation, DimensionSpecialEffects>) effectsField.get(null);
 
                         effectsMap.put(new ResourceLocation(KBSpace.MOD_ID, "moon_effect"), ModDimensionSpecialEffects.MOON_EFFECT);
-                        System.out.println("🔍 After Manual Assignment: " + Minecraft.getInstance().level.effects());
                     } catch (Exception e) {
-                        System.err.println("❌ Failed to manually assign effect!");
                         e.printStackTrace();
                     }
                 }
+
             });
-            event.enqueueWork(() -> {
-                System.out.println("✅ Injecting Custom Sky Renderer!");
 
-                try {
-                    Field skyRendererField = LevelRenderer.class.getDeclaredField("skyRenderer");
-                    skyRendererField.setAccessible(true);
-
-                    Minecraft mc = Minecraft.getInstance();
-                    LevelRenderer levelRenderer = mc.levelRenderer;
-
-                    // 🔹 Inject our custom sky renderer
-                    skyRendererField.set(levelRenderer, new ModSkyRenderer(mc));
-                    System.out.println("🌌 Custom Sky Renderer Applied!");
-
-                } catch (Exception e) {
-                    System.err.println("❌ Failed to inject Custom Sky Renderer!");
-                    e.printStackTrace();
-                }
-            });
         }
+    }
+
+    public class ModCommonEvents {
+
+        public static void register() {
+            MinecraftForge.EVENT_BUS.addListener(ModCommonEvents::onLevelTick);
+            MinecraftForge.EVENT_BUS.addListener(PlayerGravityHandler::onPlayerTick);
+        }
+
+        @SubscribeEvent
+        public static void onLevelTick(TickEvent.LevelTickEvent event) {
+            Level level = event.level;
+            if (level.isClientSide()) return;
+
+            AABB boundingBox = new AABB(
+                    level.getMinBuildHeight(), -64, level.getMinBuildHeight(),  // Min values
+                    level.getMaxBuildHeight(), 384, level.getMaxBuildHeight()  // Max values
+            );
+
+            for (Entity entity : level.getEntitiesOfClass(Entity.class, boundingBox)) {
+                if (level.dimension().equals(ModDimensions.MOON_LEVEL_KEY)) {
+                    Vec3 movement = entity.getDeltaMovement();
+
+                    entity.setNoGravity(true);
+
+                    if (entity instanceof LivingEntity) {
+                        // **Only apply gravity if the entity is in the air**
+                        if (!entity.onGround()) {
+                            double newYVelocity = movement.y - (0.08 * PlayerGravityHandler.moonGravityMultiplier);
+                            entity.setDeltaMovement(movement.x, newYVelocity, movement.z);
+                        }
+
+                        // Special handling for chickens: Prevent flapping animation
+                        if (entity instanceof Chicken chicken) {
+                            // Prevent flapping when not on the ground
+                            if (chicken.onGround()) {
+                                entity.setNoGravity(true);
+                            }
+                        }
+                    } else if (entity instanceof ItemEntity) {
+                        // Apply gravity to thrown items
+                        if (!entity.onGround()) {
+                            double gravityFactor = 0.02 * PlayerGravityHandler.moonGravityMultiplier;
+                            double smoothFallSpeed = movement.y - gravityFactor;
+                            double minFallSpeed = -0.7;  // Minimum fall speed to avoid too slow falling
+
+                            // Ensure smooth fall with gradual speed adjustment
+                            if (smoothFallSpeed > minFallSpeed) {
+                                entity.setDeltaMovement(movement.x, smoothFallSpeed, movement.z);
+                            } else {
+                                entity.setDeltaMovement(movement.x, minFallSpeed, movement.z);
+                            }
+                        }
+                    }
+
+
+                } else {
+                    entity.setNoGravity(false);
+                }
+
+            }
+        }
+
     }
 
 }
