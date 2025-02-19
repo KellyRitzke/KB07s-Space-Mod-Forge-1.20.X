@@ -11,27 +11,20 @@ import net.kb07.kbspace.worldgen.dimension.util.PlayerGravityHandler;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.DimensionSpecialEffects;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.FlyingMob;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.ai.attributes.Attribute;
-import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.entity.animal.Chicken;
-import net.minecraft.world.entity.animal.FlyingAnimal;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.EntityRenderersEvent;
 import net.minecraftforge.client.event.RegisterDimensionSpecialEffectsEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
 import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.event.entity.EntityEvent;
-import net.minecraftforge.event.entity.living.LivingEntityUseItemEvent;
 import net.minecraftforge.event.server.ServerStartingEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -118,7 +111,6 @@ public class KBSpace {
                 }
 
             });
-
         }
     }
 
@@ -126,101 +118,47 @@ public class KBSpace {
 
         public static void register() {
             MinecraftForge.EVENT_BUS.addListener(ModCommonEvents::onLevelTick);
-            //MinecraftForge.EVENT_BUS.addListener(PlayerGravityHandler::onPlayerTick);
+            MinecraftForge.EVENT_BUS.addListener(PlayerGravityHandler::onPlayerTick);
         }
 
         @SubscribeEvent
         public static void onLevelTick(TickEvent.LevelTickEvent event) {
             Level level = event.level;
-            if (level.isClientSide()) return; // Only process on the server
-
-            for (Entity entity : level.getEntities(null, new AABB(level.getMinBuildHeight(), -64, level.getMinBuildHeight(), level.getMaxBuildHeight(), 384, level.getMaxBuildHeight()))) {
-                if (entity instanceof LivingEntity livingEntity) {
-                    BlockPos pos = livingEntity.blockPosition();
-                    Vec3 travelVector = livingEntity.getDeltaMovement();
-
-                    // Call the entityTick method
-                    //new ModGravityHandler().entityTick(level, livingEntity, travelVector, pos);
-                    ModGravityHandler gravityHandler = new ModGravityHandler();
-                    gravityHandler.entityTick(level, livingEntity, travelVector, pos);
-                }
-            }
-        }
-
-        @SubscribeEvent
-        public static void onLevelTick2(TickEvent.LevelTickEvent event) {
-            Level level = event.level;
             if (level.isClientSide()) return;
 
             AABB boundingBox = new AABB(
-                    level.getMinBuildHeight(), -64, level.getMinBuildHeight(),  // Min values
-                    level.getMaxBuildHeight(), 384, level.getMaxBuildHeight()  // Max values
+                    level.getWorldBorder().getMinX(), level.getMinBuildHeight(), level.getWorldBorder().getMinZ(),
+                    level.getWorldBorder().getMaxX(), level.getMaxBuildHeight(), level.getWorldBorder().getMaxZ()
             );
 
-            for (Entity entity : level.getEntitiesOfClass(Entity.class, boundingBox)) {
+            for (Entity entity : level.getEntities((Entity) null, boundingBox, e -> !(e instanceof Player))) {
                 if (level.dimension().equals(ModDimensions.MOON_LEVEL_KEY)) {
+                    entity.setNoGravity(true);
 
                     Vec3 movement = entity.getDeltaMovement();
-                    double gravity = 0.08 * PlayerGravityHandler.moonGravityMultiplier;
 
-                    // Apply gravity if the entity is NOT on the ground
-                    if (!entity.onGround()) {
-                        entity.setDeltaMovement(movement.x, movement.y - gravity, movement.z);
-                    }
-
-                    // Ensure the entity actually updates its movement
-                    entity.setNoGravity(true); // Disables vanilla gravity handling so our custom gravity applies
-
-
-                    // **Handle Item Gravity Smoothly**
-                    if (entity instanceof ItemEntity itemEntity) {
-                        if (!itemEntity.onGround()) {
-                            double newYVelocity = movement.y - gravity * 0.5; // Reduce gravity impact slightly
-                            itemEntity.setDeltaMovement(movement.x, newYVelocity, movement.z);
+                    if (entity instanceof LivingEntity) {
+                        if (!entity.onGround() && !entity.isInWater() && !entity.isInLava()) {
+                            double newYVelocity = movement.y - (0.08 * PlayerGravityHandler.moonGravityMultiplier);
+                            entity.setDeltaMovement(movement.x, newYVelocity, movement.z);
                         }
                     }
 
-                    /**
-                     Vec3 movement = entity.getDeltaMovement();
+                    if (entity instanceof ItemEntity itemEntity) {
+                        itemEntity.setNoGravity(true);
 
-                     entity.setNoGravity(true);
+                        Vec3 velocity = itemEntity.getDeltaMovement();
+                        double gravity = 0.08 * PlayerGravityHandler.moonGravityMultiplier;
 
-                     if (entity instanceof LivingEntity) {
-                     // **Only apply gravity if the entity is in the air**
-                     if (!entity.onGround()) {
-                     double newYVelocity = movement.y - (0.08 * PlayerGravityHandler.moonGravityMultiplier);
-                     entity.setDeltaMovement(movement.x, newYVelocity, movement.z);
-                     }
-
-                     // Special handling for chickens: Prevent flapping animation
-                     if (entity instanceof Chicken chicken) {
-                     // Prevent flapping when not on the ground
-                     if (chicken.onGround()) {
-                     entity.setNoGravity(true);
-                     }
-                     }
-                     } else if (entity instanceof ItemEntity) {
-                     // Apply gravity to thrown items
-                     if (!entity.onGround()) {
-                     double gravityFactor = 0.02 * PlayerGravityHandler.moonGravityMultiplier;
-                     double smoothFallSpeed = movement.y - gravityFactor;
-                     double minFallSpeed = -0.7;  // Minimum fall speed to avoid too slow falling
-
-                     // Ensure smooth fall with gradual speed adjustment
-                     if (smoothFallSpeed > minFallSpeed) {
-                     entity.setDeltaMovement(movement.x, smoothFallSpeed, movement.z);
-                     } else {
-                     entity.setDeltaMovement(movement.x, minFallSpeed, movement.z);
-                     }
-                     }
-                     }
-                     */
-
+                        if (velocity.y > -0.5) {
+                            double newYVelocity = velocity.y - gravity;
+                            itemEntity.setDeltaMovement(velocity.x, newYVelocity, velocity.z);
+                        }
+                    }
 
                 } else {
                     entity.setNoGravity(false);
                 }
-
             }
         }
 
