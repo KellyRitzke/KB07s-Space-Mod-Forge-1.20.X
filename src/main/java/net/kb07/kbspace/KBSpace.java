@@ -2,13 +2,21 @@ package net.kb07.kbspace;
 
 import com.mojang.logging.LogUtils;
 import net.kb07.kbspace.block.ModBlocks;
+import net.kb07.kbspace.entity.ModEntities;
+import net.kb07.kbspace.entity.client.RocketRenderer;
+import net.kb07.kbspace.entity.custom.RocketEntity;
+import net.kb07.kbspace.event.ModCommonEvents;
+import net.kb07.kbspace.event.ModEventBusClientEvents;
 import net.kb07.kbspace.item.ModCreativeModeTabs;
 import net.kb07.kbspace.item.ModItems;
+import net.kb07.kbspace.util.ModKeybinds;
+import net.kb07.kbspace.util.packets.PacketHandler;
 import net.kb07.kbspace.worldgen.dimension.ModDimensionSpecialEffects;
 import net.kb07.kbspace.worldgen.dimension.ModDimensions;
 import net.kb07.kbspace.worldgen.dimension.util.PlayerGravityHandler;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.DimensionSpecialEffects;
+import net.minecraft.client.renderer.entity.EntityRenderers;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
@@ -18,10 +26,13 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.EntityRenderersEvent;
 import net.minecraftforge.client.event.RegisterDimensionSpecialEffectsEvent;
+import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
 import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.event.entity.living.LivingFallEvent;
 import net.minecraftforge.event.server.ServerStartingEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -47,6 +58,10 @@ public class KBSpace {
 
         ModItems.register(modEventBus);
         ModBlocks.register(modEventBus);
+
+        ModEntities.register(modEventBus);
+
+        PacketHandler.register();
 
         ModCreativeModeTabs.register(modEventBus);
         ModDimensionSpecialEffects.register();
@@ -89,7 +104,13 @@ public class KBSpace {
         }
 
         @SubscribeEvent
+        public static void registerKeyMappings(RegisterKeyMappingsEvent event) {
+            ModKeybinds.register(event);
+        }
+
+        @SubscribeEvent
         public static void onClientSetup(FMLClientSetupEvent event) {
+            EntityRenderers.register(ModEntities.ROCKET.get(), RocketRenderer::new);
             event.enqueueWork(() -> {
                 ModDimensionSpecialEffects.register(); // Ensure registration
                 if (Minecraft.getInstance().level != null) {
@@ -109,62 +130,6 @@ public class KBSpace {
 
             });
         }
-    }
-
-    public class ModCommonEvents {
-
-        public static void register() {
-            MinecraftForge.EVENT_BUS.addListener(ModCommonEvents::onLevelTick);
-            MinecraftForge.EVENT_BUS.addListener(PlayerGravityHandler::onPlayerTick);
-        }
-
-        @SubscribeEvent
-        public static void onLevelTick(TickEvent.LevelTickEvent event) {
-            Level level = event.level;
-            if (!level.dimension().equals(ModDimensions.MOON_LEVEL_KEY)) return;
-
-            AABB boundingBox = new AABB(
-                    -5000, level.getMinBuildHeight(), -5000,
-                    5000, level.getMaxBuildHeight(), 5000
-            );
-
-            for (Entity entity : level.getEntitiesOfClass((Entity.class), boundingBox, e -> !(e instanceof Player))) {
-                if (level.dimension().equals(ModDimensions.MOON_LEVEL_KEY)) {
-
-                    Vec3 movement = entity.getDeltaMovement();
-
-                    if (entity instanceof LivingEntity livingEntity) {
-                        if (!livingEntity.onGround() && !livingEntity.isInWater() && !livingEntity.isInLava()) {
-                            entity.setNoGravity(true);
-                            double newYVelocity = movement.y - (0.08 * PlayerGravityHandler.moonGravityMultiplier);
-                            livingEntity.setDeltaMovement(movement.x, newYVelocity, movement.z);
-                        } else {
-                            entity.setNoGravity(false);
-                        }
-                    }
-
-                    if (entity instanceof ItemEntity itemEntity) {
-
-                        if (!itemEntity.onGround() || !itemEntity.isInWater() || !itemEntity.isInLava()) {
-                            itemEntity.setNoGravity(true); // Disable default gravity
-
-                            Vec3 velocity = itemEntity.getDeltaMovement();
-                            double gravity = 0.08 * PlayerGravityHandler.moonGravityMultiplier;
-
-                            Vec3 newVelocity = velocity.add(0, -gravity, 0);
-                            itemEntity.setDeltaMovement(newVelocity);
-                        } else {
-                            itemEntity.setNoGravity(false);
-                        }
-
-                    }
-
-                } else {
-                    entity.setNoGravity(false);
-                }
-            }
-        }
-
     }
 
 }

@@ -36,12 +36,12 @@ public class ModPortalBlock extends Block {
             ResourceKey<Level> resourceKey = player.level().dimension() == ModDimensions.MOON_LEVEL_KEY ?
                     Level.OVERWORLD : ModDimensions.MOON_LEVEL_KEY;
 
-            ServerLevel portalDimesnion = minecraftServer.getLevel(resourceKey);
-            if (portalDimesnion != null && !player.isPassenger()) {
+            ServerLevel portalDimension = minecraftServer.getLevel(resourceKey);
+            if (portalDimension != null && !player.isPassenger()) {
                 if (resourceKey == ModDimensions.MOON_LEVEL_KEY) {
-                    player.changeDimension(portalDimesnion, new ModTeleporter(pPos, true));
+                    player.changeDimension(portalDimension, new ModTeleporter(pPos, true));
                 } else {
-                    player.changeDimension(portalDimesnion, new ModTeleporter(pPos, false));
+                    player.changeDimension(portalDimension, new ModTeleporter(pPos, false));
                 }
             }
         }

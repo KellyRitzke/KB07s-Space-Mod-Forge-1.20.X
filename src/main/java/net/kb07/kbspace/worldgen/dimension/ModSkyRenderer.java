@@ -8,6 +8,7 @@ import com.mojang.math.Axis;
 import net.kb07.kbspace.KBSpace;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.font.providers.UnihexProvider;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.*;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderDispatcher;
@@ -15,6 +16,9 @@ import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.dimension.DimensionDefaults;
+import net.minecraft.world.level.dimension.DimensionType;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 import org.lwjgl.system.linux.XGenericEvent;
@@ -22,6 +26,7 @@ import org.lwjgl.system.linux.XGenericEvent;
 import javax.annotation.Nullable;
 import javax.management.Attribute;
 import javax.swing.text.html.parser.Entity;
+import java.awt.*;
 
 
 public class ModSkyRenderer {
@@ -44,7 +49,43 @@ public class ModSkyRenderer {
 
     public void renderSky(ClientLevel level, int ticks, float partialTick, PoseStack poseStack, Camera camera, Matrix4f projectionMatrix, boolean isFoggy, Runnable setupFog) {
 
-        if (level != null && level.dimensionType().effectsLocation().equals(new ResourceLocation(KBSpace.MOD_ID, "moon_effect"))) {
+        if (level != null && level.dimension().equals(Level.OVERWORLD)) {
+
+            if (!isFoggy) {
+                setupFog.run(); // Ensures fog settings are applied only when needed
+            }
+
+            BufferBuilder bufferbuilder = Tesselator.getInstance().getBuilder();
+            RenderSystem.depthMask(false);
+            ShaderInstance shaderinstance = RenderSystem.getShader();
+            assert this.skyBuffer != null;
+            this.skyBuffer.bind();
+            assert shaderinstance != null;
+            this.skyBuffer.drawWithShader(poseStack.last().pose(), projectionMatrix, shaderinstance);
+            VertexBuffer.unbind();
+
+            poseStack.pushPose(); // Earth
+            poseStack.mulPose(Axis.XP.rotationDegrees(180.0f));
+
+            float earthSize = 100.0F;
+            Matrix4f earthMatrix = poseStack.last().pose();
+
+            RenderSystem.setShader(GameRenderer::getPositionTexShader);
+            RenderSystem.setShaderTexture(0, EARTH_LOCATION);
+            bufferbuilder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
+            bufferbuilder.vertex(earthMatrix, -earthSize, 100.0F, -earthSize).uv(0.0F, 0.0F).endVertex();
+            bufferbuilder.vertex(earthMatrix, earthSize, 100.0F, -earthSize).uv(1.0F, 0.0F).endVertex();
+            bufferbuilder.vertex(earthMatrix, earthSize, 100.0F, earthSize).uv(1.0F, 1.0F).endVertex();
+            bufferbuilder.vertex(earthMatrix, -earthSize, 100.0F, earthSize).uv(0.0F, 1.0F).endVertex();
+            BufferUploader.drawWithShader(bufferbuilder.end());
+
+            poseStack.popPose();
+
+            RenderSystem.depthMask(true);
+
+        }
+
+        if (level != null && level.dimension().equals(ModDimensions.MOON_LEVEL_KEY)) {
 
             // Inject your custom sky rendering logic here
             // For example, make sure the sky is rendered with your custom properties
