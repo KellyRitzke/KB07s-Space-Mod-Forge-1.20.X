@@ -1,5 +1,7 @@
 package net.kb07.kbspace.entity.client;
 
+import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
@@ -27,20 +29,26 @@ public class RocketRenderer extends EntityRenderer<RocketEntity> {
 
     @Override
     public void render(RocketEntity pEntity, float pEntityYaw, float pPartialTick, PoseStack pPoseStack, MultiBufferSource pBuffer, int pPackedLight) {
+
+        RenderSystem.disableDepthTest();
+        RenderSystem.depthMask(false);
         pPoseStack.pushPose();
 
         // Rotate and scale the entity
-        pPoseStack.translate(0.0D, 1.0D, 0.0D);
+        pPoseStack.translate(0.0D, 1.5D, 0.0D);
         pPoseStack.mulPose(Axis.YP.rotationDegrees(pEntityYaw));
         pPoseStack.mulPose(Axis.XP.rotationDegrees(180.0F));
 
-        VertexConsumer vertexConsumer = pBuffer.getBuffer(RenderType.entityTranslucent(getTextureLocation(pEntity)));
-        //VertexConsumer vertexConsumer = pBuffer.getBuffer(RenderType.entityCutoutNoCull(getTextureLocation(pEntity)));
+        VertexConsumer vertexConsumer = pBuffer.getBuffer(RenderType.entityCutoutNoCull(getTextureLocation(pEntity)));
         model.renderToBuffer(pPoseStack, vertexConsumer, pPackedLight, OverlayTexture.NO_OVERLAY, 1.0F, 1.0F, 1.0F, 1.0F);
 
         pPoseStack.popPose();
 
         super.render(pEntity, pEntityYaw, pPartialTick, pPoseStack, pBuffer, pPackedLight);
+
+        RenderSystem.depthMask(true);
+        RenderSystem.enableDepthTest();
+
     }
 
 

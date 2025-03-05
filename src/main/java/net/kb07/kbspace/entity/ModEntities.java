@@ -17,7 +17,7 @@ public class ModEntities {
 
     public static RegistryObject<EntityType<RocketEntity>> ROCKET =
             ENTITY_TYPES.register("rocket", () -> EntityType.Builder.of(RocketEntity::new, MobCategory.MISC)
-                    .sized(1.0f, 2.0f)
+                    .sized(1.0f, 2.5f)
                     .build(new ResourceLocation(KBSpace.MOD_ID, "rocket").getPath()));
 
 

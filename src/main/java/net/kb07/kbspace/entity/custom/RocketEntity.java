@@ -13,13 +13,11 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -31,10 +29,13 @@ public class RocketEntity extends Entity implements PlayerRideable {
 
     private static final EntityDataAccessor<Boolean> LAUNCHING = SynchedEntityData.defineId(RocketEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> CANLAUNCH = SynchedEntityData.defineId(RocketEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Boolean> SLOWDOWN = SynchedEntityData.defineId(RocketEntity.class, EntityDataSerializers.BOOLEAN);
+
 
     private boolean launching;
     private boolean canLaunch;
     private boolean hasTeleported = false;
+    private boolean slowdown;
     public int YLevel = 200;
 
     public RocketEntity(EntityType<?> pEntityType, Level pLevel) {
@@ -58,13 +59,24 @@ public class RocketEntity extends Entity implements PlayerRideable {
     @Override
     public void tick() {
         super.tick();
+        this.setNoGravity(true);
+
+        //System.out.println("Y: " + this.getDeltaMovement().y);
+        //System.out.println("Slowdown: " + this.slowdown);
 
         if (!this.level().isClientSide) { // Only update on server
             this.entityData.set(LAUNCHING, this.launching); // Sync with client
             this.entityData.set(CANLAUNCH, this.canLaunch);
+            this.entityData.set(SLOWDOWN, this.slowdown);
         } else {
             this.launching = this.entityData.get(LAUNCHING); // Client reads from server
             this.canLaunch = this.entityData.get(CANLAUNCH);
+            this.slowdown = this.entityData.get(SLOWDOWN);
+        }
+
+        if (this.onGround()) {
+            canLaunch = true;
+            //if (this.getDeltaMovement().y < -0.1) {}
         }
 
         // Check if the rocket is currently being launched
@@ -75,18 +87,11 @@ public class RocketEntity extends Entity implements PlayerRideable {
             this.onLaunchComplete();
         }
 
-        // Hover
-        if (!this.launching && checkNearGround(0.5)) {
-            this.setDeltaMovement(0, 0, 0);
-            this.setPos(this.getX(), (int) this.getY() - 0.5, this.getZ()); // Raise it up
-            this.canLaunch = true;
-        }
-
         // Apply gravity only if not launching and the rocket is not on the ground
-        if (!this.launching) {
+        if (!this.launching && !this.slowdown) {
             applyCustomGravity();
         } else {
-            this.setNoGravity(true);
+            this.slowdown = false;
         }
 
         this.move(MoverType.SELF, this.getDeltaMovement());
@@ -97,30 +102,24 @@ public class RocketEntity extends Entity implements PlayerRideable {
             this.setNoGravity(true);
             double gravity = 0;
 
+            Vec3 movement = this.getDeltaMovement();
+
             if (this.level().dimension().equals(Level.OVERWORLD)) {
-                gravity = 1;
+                // drag aka air resistance
+                double newYVelocity = movement.y - 0.08;
+                newYVelocity *= 0.96;
+                this.setDeltaMovement(movement.x, newYVelocity, movement.z);
             } else if (this.level().dimension().equals(ModDimensions.MOON_LEVEL_KEY)) {
                 gravity = PlayerGravityHandler.moonGravityMultiplier;
             }
 
-            Vec3 movement = this.getDeltaMovement();
-
-            if (checkNearGround(0.5)) {
-                this.setDeltaMovement(0, 0, 0);
-            } else {
+            if (!this.level().dimension().equals(Level.OVERWORLD)) {
+                // gravity
                 double newYVelocity = movement.y - (0.08 * gravity);
                 this.setDeltaMovement(movement.x, newYVelocity, movement.z);
             }
-        }
-    }
 
-    private boolean checkNearGround(double offset) {
-        BlockPos posBelow = new BlockPos(
-                Mth.floor(this.getX()),
-                Mth.floor(this.getY() - offset),
-                Mth.floor(this.getZ())
-        );
-        return !this.level().getBlockState(posBelow).isAir();
+        }
     }
 
     @Override
@@ -156,7 +155,7 @@ public class RocketEntity extends Entity implements PlayerRideable {
     @Override
     public void positionRider(Entity passenger, MoveFunction moveFunction) {
         if (passenger instanceof Player player) {
-            Vec3 seatPos = this.position().add(0, -0.1, 0); // Adjust height
+            Vec3 seatPos = this.position().add(0, 0.4, 0); // Adjust height
             moveFunction.accept(player, seatPos.x, seatPos.y, seatPos.z);
         } else {
             super.positionRider(passenger, moveFunction);
@@ -174,8 +173,15 @@ public class RocketEntity extends Entity implements PlayerRideable {
     }
 
     public void slowDown() {
-        if (!this.launching && this.getDeltaMovement().y > 0 && !this.canLaunch) {
-            this.setDeltaMovement(this.getDeltaMovement().x, this.getDeltaMovement().y * 0.5, this.getDeltaMovement().z);
+        double slowdownRate = 0.05;
+        if (!this.launching && !this.canLaunch) {
+            System.out.println("Slowing down");
+            double newYVelocity = this.getDeltaMovement().y + slowdownRate;
+            if (newYVelocity > 0) {
+                newYVelocity = 0;
+            }
+            this.setDeltaMovement(this.getDeltaMovement().x, newYVelocity, this.getDeltaMovement().z);
+            this.slowdown = true;
         }
     }
 
@@ -186,13 +192,15 @@ public class RocketEntity extends Entity implements PlayerRideable {
             this.launching = true;
             this.canLaunch = false;
             this.entityData.set(LAUNCHING, true); // Sync with client
-            this.entityData.set(CANLAUNCH, true); // Sync with client
+            this.entityData.set(CANLAUNCH, false); // Sync with client
+            this.entityData.set(SLOWDOWN, false); // Sync with client
             this.hasTeleported = false;
         }
     }
 
     public void onLaunchComplete() {
         this.launching = false;
+        this.canLaunch = false;
         if (this.hasTeleported) return; // Prevents repeated teleportation
 
         this.hasTeleported = true; // Mark teleportation as completed
@@ -264,6 +272,7 @@ public class RocketEntity extends Entity implements PlayerRideable {
     protected void defineSynchedData() {
         this.entityData.define(LAUNCHING, false); // Default value
         this.entityData.define(CANLAUNCH, false); // Default value
+        this.entityData.define(SLOWDOWN, false); // Default value
     }
 
     @Override
