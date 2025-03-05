@@ -1,11 +1,15 @@
 package net.kb07.kbspace.entity.custom;
 
 import net.kb07.kbspace.entity.ModEntities;
+import net.kb07.kbspace.util.packets.OpenSpaceDestinationPacket;
+import net.kb07.kbspace.util.packets.PacketHandler;
+import net.kb07.kbspace.util.screens.SpaceSelectionScreen;
 import net.kb07.kbspace.worldgen.dimension.ModDimensions;
 import net.kb07.kbspace.worldgen.dimension.util.PlayerGravityHandler;
 import net.kb07.kbspace.worldgen.portal.ModTeleporter;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -15,10 +19,13 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.SimpleMenuProvider;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.network.NetworkHooks;
+import net.minecraftforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -35,6 +42,10 @@ public class RocketEntity extends Entity implements PlayerRideable {
     private boolean launching;
     private boolean canLaunch;
     private boolean hasTeleported = false;
+    private boolean wasFallingFast = false;
+    private boolean wasFallingSlow;
+    private boolean hasLanded = false;
+
     private boolean slowdown;
     public int YLevel = 200;
 
@@ -61,9 +72,6 @@ public class RocketEntity extends Entity implements PlayerRideable {
         super.tick();
         this.setNoGravity(true);
 
-        //System.out.println("Y: " + this.getDeltaMovement().y);
-        //System.out.println("Slowdown: " + this.slowdown);
-
         if (!this.level().isClientSide) { // Only update on server
             this.entityData.set(LAUNCHING, this.launching); // Sync with client
             this.entityData.set(CANLAUNCH, this.canLaunch);
@@ -74,9 +82,30 @@ public class RocketEntity extends Entity implements PlayerRideable {
             this.slowdown = this.entityData.get(SLOWDOWN);
         }
 
+
+        // Check if the rocket was falling in the previous tick
+        if (this.getDeltaMovement().y < -1) {
+            this.wasFallingFast = true; // Mark that the rocket was falling
+            this.wasFallingSlow = false;
+        } else if (this.wasFallingFast && this.getDeltaMovement().y > -0.75 && !(this.getDeltaMovement().y == 0)) {
+            this.wasFallingFast = false;
+            this.wasFallingSlow = true;
+        }
+
+        // If the rocket was falling and now it's on the ground, trigger explosion
+        if (this.wasFallingFast && this.onGround()) {
+            this.level().explode(null, this.getX(), this.getY(), this.getZ(), 4.0F, Level.ExplosionInteraction.BLOCK);
+
+            // Remove the rocket entity after the explosion
+            this.discard();
+        } else if (this.wasFallingSlow && this.onGround()) {
+            this.hasLanded = true;
+        }
+
+
+
         if (this.onGround()) {
             canLaunch = true;
-            //if (this.getDeltaMovement().y < -0.1) {}
         }
 
         // Check if the rocket is currently being launched
@@ -172,10 +201,30 @@ public class RocketEntity extends Entity implements PlayerRideable {
         return false; // Prevents the player from being pushed off
     }
 
+    @Override
+    public void ejectPassengers() {
+        Entity passenger = this.getFirstPassenger();
+        super.ejectPassengers();
+
+        if (passenger instanceof Player) {
+            this.wasFallingSlow = false;
+            this.hasLanded = false; // Reset when the player exits
+        }
+    }
+
+    @Override
+    public void removePassenger(Entity passenger) {
+        super.removePassenger(passenger);
+
+        if (passenger instanceof Player) {
+            this.wasFallingSlow = false;
+            this.hasLanded = false; // Reset when the player exits
+        }
+    }
+
     public void slowDown() {
-        double slowdownRate = 0.05;
+        double slowdownRate = 0.025;
         if (!this.launching && !this.canLaunch) {
-            System.out.println("Slowing down");
             double newYVelocity = this.getDeltaMovement().y + slowdownRate;
             if (newYVelocity > 0) {
                 newYVelocity = 0;
@@ -186,9 +235,7 @@ public class RocketEntity extends Entity implements PlayerRideable {
     }
 
     public void startLaunch() {
-        if (!this.launching && canLaunch) {
-            System.out.println("Start Launch Called on: " + (level().isClientSide ? "Client" : "Server"));
-            System.out.println("Starting launch..."); // Debugging
+        if (!this.launching && canLaunch && !hasLanded) {
             this.launching = true;
             this.canLaunch = false;
             this.entityData.set(LAUNCHING, true); // Sync with client
@@ -206,25 +253,20 @@ public class RocketEntity extends Entity implements PlayerRideable {
         this.hasTeleported = true; // Mark teleportation as completed
 
         if (!this.level().isClientSide) {
-            ServerLevel targetLevel = null;
 
-            if (this.level().dimension().equals(Level.OVERWORLD)) {
-                targetLevel = Objects.requireNonNull(this.getServer()).getLevel(ModDimensions.MOON_LEVEL_KEY);
-            } else if (this.level().dimension().equals(ModDimensions.MOON_LEVEL_KEY)) {
-                targetLevel = Objects.requireNonNull(this.getServer()).getLevel(Level.OVERWORLD);
+            if (this.getFirstPassenger() instanceof ServerPlayer player) {
+                PacketHandler.CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), new OpenSpaceDestinationPacket());
             }
 
-            if (targetLevel != null) {
-                teleportRocketAndRider(targetLevel);
-            } else {
-                System.out.println("Target dimension not found!");
-            }
+
         }
     }
 
-    private void teleportRocketAndRider(ServerLevel targetLevel) {
+    public void teleportRocketAndRider(ServerLevel targetLevel) {
 
-        if (!(this.level() instanceof ServerLevel currentLevel)) return; // Ensure we are on the server
+        if (!(this.level() instanceof ServerLevel)) return; // Ensure we are on the server
+
+        if (this.level().equals(targetLevel)) return; // Ensure we aren't teleporting to the same dimension
 
         Vec3 currentPos = this.position();
         Entity passenger = this.getFirstPassenger();
@@ -257,7 +299,7 @@ public class RocketEntity extends Entity implements PlayerRideable {
                 ServerLevel portalDimension = minecraftServer.getLevel(resourceKey);
                 if (portalDimension != null && !player.isPassenger()) {
                     BlockPos pos = new BlockPos(player.getBlockX(), player.getBlockY(), player.getBlockZ());
-                    player.changeDimension(portalDimension, new ModTeleporter(pos, false));
+                    player.changeDimension(portalDimension, new ModTeleporter(pos));
                 }
 
                 assert newRocket != null;

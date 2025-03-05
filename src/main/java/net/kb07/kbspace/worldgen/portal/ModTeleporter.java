@@ -1,7 +1,5 @@
 package net.kb07.kbspace.worldgen.portal;
 
-import net.kb07.kbspace.block.ModBlocks;
-import net.kb07.kbspace.block.custom.ModPortalBlock;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
@@ -15,9 +13,8 @@ public class ModTeleporter implements ITeleporter {
     public static BlockPos thisPos = BlockPos.ZERO;
     public static boolean insideDimension = true;
 
-    public ModTeleporter(BlockPos pos, boolean insideDim) {
+    public ModTeleporter(BlockPos pos) {
         thisPos = pos;
-        insideDimension = insideDim;
     }
 
     @Override
@@ -25,10 +22,6 @@ public class ModTeleporter implements ITeleporter {
                               float yaw, Function<Boolean, Entity> repositionEntity) {
         entity = repositionEntity.apply(false);
         int y = 61;
-
-        if (!insideDimension) {
-            y = thisPos.getY();
-        }
 
         BlockPos destinationPos = new BlockPos(thisPos.getX(), y, thisPos.getZ());
 
@@ -42,20 +35,6 @@ public class ModTeleporter implements ITeleporter {
         }
 
         entity.setPos(destinationPos.getX(), destinationPos.getY(), destinationPos.getZ());
-
-        if (insideDimension) {
-            boolean doSetBlock = true;
-            for (BlockPos checkPos : BlockPos.betweenClosed(destinationPos.below(10).west(10),
-                    destinationPos.above(10).east(10))) {
-                if (destinationWorld.getBlockState(checkPos).getBlock() instanceof ModPortalBlock) {
-                    doSetBlock = false;
-                    break;
-                }
-            }
-            if (doSetBlock) {
-                destinationWorld.setBlock(destinationPos, ModBlocks.MOON_PORTAL.get().defaultBlockState(), 3);
-            }
-        }
 
         return entity;
     }

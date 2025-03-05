@@ -1,19 +1,15 @@
 package net.kb07.kbspace.util.packets;
 
 import net.kb07.kbspace.KBSpace;
-import net.kb07.kbspace.entity.custom.RocketEntity;
-import net.kb07.kbspace.util.LaunchRocketPacket;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.network.NetworkEvent;
+import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.network.NetworkRegistry;
 import net.minecraftforge.network.simple.SimpleChannel;
 
-import java.util.function.Supplier;
-
 public class PacketHandler {
-    private static final String PROTOCOL_VERSION = "1";
+
     private static int id = 0;
+    private static final String PROTOCOL_VERSION = "1";
     public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(
             new ResourceLocation(KBSpace.MOD_ID, "main/channel"),
             () -> PROTOCOL_VERSION,
@@ -21,8 +17,8 @@ public class PacketHandler {
             PROTOCOL_VERSION::equals
     );
 
-    public static final SimpleChannel INSTANCE = NetworkRegistry.newSimpleChannel(
-            new ResourceLocation(KBSpace.MOD_ID, "main/instance"),
+    public static final SimpleChannel SLOWDOWN_INSTANCE = NetworkRegistry.newSimpleChannel(
+            new ResourceLocation(KBSpace.MOD_ID, "main/instance/slowdown_rocket"),
             () -> "1.0",
             s -> true,
             s -> true
@@ -33,10 +29,18 @@ public class PacketHandler {
                 LaunchRocketPacket::encode,
                 LaunchRocketPacket::decode,
                 LaunchRocketPacket::handle);
-        INSTANCE.registerMessage(id++, RocketSlowdownPacket.class,
+        SLOWDOWN_INSTANCE.registerMessage(id++, RocketSlowdownPacket.class,
                 RocketSlowdownPacket::encode,
                 RocketSlowdownPacket::decode,
                 RocketSlowdownPacket::handle);
+        CHANNEL.registerMessage(id++, SpaceDestinationPacket.class,
+                SpaceDestinationPacket::toBytes,
+                SpaceDestinationPacket::new,
+                SpaceDestinationPacket::handle);
+        CHANNEL.registerMessage(id++, OpenSpaceDestinationPacket.class,
+                OpenSpaceDestinationPacket::toBytes,
+                OpenSpaceDestinationPacket::new,
+                OpenSpaceDestinationPacket::handle);
 
     }
 

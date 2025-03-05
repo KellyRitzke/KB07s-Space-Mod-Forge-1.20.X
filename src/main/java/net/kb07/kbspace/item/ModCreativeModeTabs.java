@@ -20,7 +20,6 @@ public class ModCreativeModeTabs {
                     .displayItems((pParameters, pOutput) -> {
 
                         pOutput.accept(ModBlocks.MOON_IRON_ORE.get());
-                        pOutput.accept(ModBlocks.MOON_PORTAL.get());
 
                     }).build());
 

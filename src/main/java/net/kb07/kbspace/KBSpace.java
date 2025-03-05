@@ -82,7 +82,6 @@ public class KBSpace {
     private void commonSetup(final FMLCommonSetupEvent event) {
         // Manually register your custom dimension effect
         ModDimensionSpecialEffects.register();
-        System.out.println("✅ Manual registration of custom dimension effect");
     }
 
     // Add the example block item to the building blocks tab

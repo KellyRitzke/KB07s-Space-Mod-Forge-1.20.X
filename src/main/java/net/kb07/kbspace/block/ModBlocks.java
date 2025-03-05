@@ -1,7 +1,6 @@
 package net.kb07.kbspace.block;
 
 import net.kb07.kbspace.KBSpace;
-import net.kb07.kbspace.block.custom.ModPortalBlock;
 import net.kb07.kbspace.item.ModItems;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
@@ -21,9 +20,6 @@ public class ModBlocks {
 
     public static final RegistryObject<Block> MOON_IRON_ORE = registerBlock("moon_iron_ore",
             () -> new Block(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK)));
-
-    public static final RegistryObject<Block> MOON_PORTAL = registerBlock("moon_portal",
-            () -> new ModPortalBlock(BlockBehaviour.Properties.copy(Blocks.STONE).noLootTable().noOcclusion()));
 
 
     private static <T extends Block> RegistryObject<T> registerBlock(String name, Supplier<T> block) {

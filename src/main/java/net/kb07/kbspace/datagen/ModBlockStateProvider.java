@@ -17,7 +17,6 @@ public class ModBlockStateProvider extends BlockStateProvider {
     protected void registerStatesAndModels() {
 
         blockWithCubeItem(ModBlocks.MOON_IRON_ORE);
-        blockWithCubeItem(ModBlocks.MOON_PORTAL);
 
     }
 
