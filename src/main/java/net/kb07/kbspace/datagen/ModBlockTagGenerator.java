@@ -2,12 +2,9 @@ package net.kb07.kbspace.datagen;
 
 import net.kb07.kbspace.KBSpace;
 import net.kb07.kbspace.block.ModBlocks;
-import net.kb07.kbspace.util.ModTags;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.data.PackOutput;
 import net.minecraft.tags.BlockTags;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraftforge.common.data.BlockTagsProvider;
 import net.minecraftforge.common.data.ExistingFileHelper;
 import org.jetbrains.annotations.Nullable;

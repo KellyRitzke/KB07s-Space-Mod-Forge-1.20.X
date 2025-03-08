@@ -19,9 +19,9 @@ public class SpaceSelectionScreen extends Screen {
 
     private static final List<ResourceLocation> PLANETS = new ArrayList<>();
     static {
-        PLANETS.add(new ResourceLocation(KBSpace.MOD_ID, "textures/gui/earth.png"));
-        PLANETS.add(new ResourceLocation(KBSpace.MOD_ID, "textures/gui/moon.png"));
-        PLANETS.add(new ResourceLocation(KBSpace.MOD_ID, "textures/gui/planet3.png"));
+        PLANETS.add(new ResourceLocation(KBSpace.MOD_ID, "textures/environment/earth.png"));
+        PLANETS.add(new ResourceLocation(KBSpace.MOD_ID, "textures/environment/moon.png"));
+        PLANETS.add(new ResourceLocation(KBSpace.MOD_ID, "textures/environment/mars.png"));
     }
 
     private int selectedPlanet = 0;
@@ -101,6 +101,7 @@ public class SpaceSelectionScreen extends Screen {
         }
     }
 
+
     /**
      * Key Codes:
      *      Left arrow: 263
@@ -108,6 +109,8 @@ public class SpaceSelectionScreen extends Screen {
      *      A key: 65
      *      D key: 68
      */
+
+
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
         if (keyCode == 68) { // Right
