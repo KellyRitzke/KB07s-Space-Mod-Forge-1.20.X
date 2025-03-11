@@ -36,6 +36,15 @@ public class ModCommonEvents {
             float newDistance = originalDistance * 0.4f; // Example: Reduce fall height by 60%
             event.setDistance(newDistance);
         }
+
+        if (level.dimension().equals(ModDimensions.MARS_LEVEL_KEY)) {
+            float originalDistance = event.getDistance();
+
+            // Scale fall damage based on moon gravity (adjust multiplier as needed)
+            float newDistance = originalDistance * 0.6f; // Example: Reduce fall height by 40%
+            event.setDistance(newDistance);
+        }
+
     }
 
     @SubscribeEvent
@@ -43,45 +52,47 @@ public class ModCommonEvents {
         Level level = event.level;
         if (!level.dimension().equals(ModDimensions.MOON_LEVEL_KEY)) return;
 
-        AABB boundingBox = new AABB(
-                -5000, level.getMinBuildHeight(), -5000,
-                5000, 800, 5000
-        );
-
-        for (Entity entity : level.getEntitiesOfClass((Entity.class), boundingBox, e -> !(e instanceof Player))) {
+        for (Entity entity : level.getEntitiesOfClass((Entity.class), level.getWorldBorder().getCollisionShape().bounds(), e -> !(e instanceof Player))) {
             if (level.dimension().equals(ModDimensions.MOON_LEVEL_KEY)) {
+                gravity(entity, PlayerGravityHandler.moonGravityMultiplier);
 
-                Vec3 movement = entity.getDeltaMovement();
+            } else if (level.dimension().equals(ModDimensions.MARS_LEVEL_KEY)) {
+                gravity(entity, PlayerGravityHandler.marsGravityMultiplier);
 
-                if (entity instanceof LivingEntity livingEntity) {
-                    if (!livingEntity.onGround() && !livingEntity.isInWater() && !livingEntity.isInLava()) {
-                        entity.setNoGravity(true);
-                        double newYVelocity = movement.y - (0.08 * PlayerGravityHandler.moonGravityMultiplier);
-                        livingEntity.setDeltaMovement(movement.x, newYVelocity, movement.z);
-                    } else {
-                        entity.setNoGravity(false);
-                    }
-                }
+            }
+            else {
+                entity.setNoGravity(false);
+            }
+        }
+    }
 
-                if (entity instanceof ItemEntity itemEntity) {
+    public static void gravity(Entity entity, double gravityMult) {
+        Vec3 movement = entity.getDeltaMovement();
 
-                    if (!itemEntity.onGround() || !itemEntity.isInWater() || !itemEntity.isInLava()) {
-                        itemEntity.setNoGravity(true); // Disable default gravity
-
-                        Vec3 velocity = itemEntity.getDeltaMovement();
-                        double gravity = 0.08 * PlayerGravityHandler.moonGravityMultiplier;
-
-                        Vec3 newVelocity = velocity.add(0, -gravity, 0);
-                        itemEntity.setDeltaMovement(newVelocity);
-                    } else {
-                        itemEntity.setNoGravity(false);
-                    }
-
-                }
-
+        if (entity instanceof LivingEntity livingEntity) {
+            if (!livingEntity.onGround() && !livingEntity.isInWater() && !livingEntity.isInLava()) {
+                entity.setNoGravity(true);
+                double newYVelocity = movement.y - (0.08 * gravityMult);
+                livingEntity.setDeltaMovement(movement.x, newYVelocity, movement.z);
             } else {
                 entity.setNoGravity(false);
             }
+        }
+
+        if (entity instanceof ItemEntity itemEntity) {
+
+            if (!itemEntity.onGround() || !itemEntity.isInWater() || !itemEntity.isInLava()) {
+                itemEntity.setNoGravity(true); // Disable default gravity
+
+                Vec3 velocity = itemEntity.getDeltaMovement();
+                double gravity = 0.08 * gravityMult;
+
+                Vec3 newVelocity = velocity.add(0, -gravity, 0);
+                itemEntity.setDeltaMovement(newVelocity);
+            } else {
+                itemEntity.setNoGravity(false);
+            }
+
         }
     }
 

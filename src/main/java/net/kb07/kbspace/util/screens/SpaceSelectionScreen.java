@@ -50,13 +50,13 @@ public class SpaceSelectionScreen extends Screen {
                 }).bounds(centerX - 50, centerY, 100, 20).build()
         );
 
-        /**
         this.addRenderableWidget(
                 Button.builder(Component.literal("Mars"), button -> {
+                    PacketHandler.sendToServer(new SpaceDestinationPacket("mars"));
                     this.onClose();
                 }).bounds(centerX - 50, centerY + 40, 100, 20).build()
         );
-         */
+
     }
 
     @Override

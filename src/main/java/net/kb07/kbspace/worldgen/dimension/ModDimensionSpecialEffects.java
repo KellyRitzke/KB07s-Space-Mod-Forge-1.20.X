@@ -20,6 +20,9 @@ public class ModDimensionSpecialEffects extends DimensionSpecialEffects {
     public static final DimensionSpecialEffects MOON_EFFECT = new ModDimensionSpecialEffects(
             Float.NaN, true, SkyType.NORMAL, true, false, (vec, worldTime) -> vec, (x, z) -> false);
 
+    public static final DimensionSpecialEffects MARS_EFFECT = new ModDimensionSpecialEffects(
+            Float.NaN, true, SkyType.NORMAL, true, false, (vec, worldTime) -> vec, (x, z) -> false);
+
 
     protected static final BiFunction<Integer, Integer, Boolean> FOGGY_FALSE = (x, z) -> false;
     protected static final BiFunction<Integer, Integer, Boolean> FOGGY_TRUE = (x, z) -> true;
@@ -53,7 +56,8 @@ public class ModDimensionSpecialEffects extends DimensionSpecialEffects {
     // Manually register the custom effect in the EFFECTS map
     public static void register() {
         try {
-            ResourceLocation id = new ResourceLocation(KBSpace.MOD_ID, "moon_effect");
+            ResourceLocation moonID = new ResourceLocation(KBSpace.MOD_ID, "moon_effect");
+            ResourceLocation marsID = new ResourceLocation(KBSpace.MOD_ID, "mars_effect");
 
             Field effectsField = DimensionSpecialEffects.class.getDeclaredField("EFFECTS");
             effectsField.setAccessible(true);
@@ -61,7 +65,8 @@ public class ModDimensionSpecialEffects extends DimensionSpecialEffects {
             @SuppressWarnings("unchecked")
             Map<ResourceLocation, DimensionSpecialEffects> effectsMap = (Map<ResourceLocation, DimensionSpecialEffects>) effectsField.get(null);
 
-            effectsMap.put(id, MOON_EFFECT);
+            effectsMap.put(moonID, MOON_EFFECT);
+            effectsMap.put(marsID, MARS_EFFECT);
 
 
         } catch (Exception e) {

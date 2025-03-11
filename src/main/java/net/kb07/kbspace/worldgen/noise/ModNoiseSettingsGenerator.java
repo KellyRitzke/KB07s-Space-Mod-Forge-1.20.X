@@ -2,26 +2,23 @@ package net.kb07.kbspace.worldgen.noise;
 
 import net.kb07.kbspace.KBSpace;
 import net.kb07.kbspace.worldgen.biome.surface.ModSurfaceRules;
-import net.minecraft.core.Holder;
 import net.minecraft.core.HolderGetter;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.data.worldgen.BootstapContext;
-import net.minecraft.data.worldgen.SurfaceRuleData;
-import net.minecraft.data.worldgen.TerrainProvider;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.level.biome.OverworldBiomeBuilder;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.dimension.DimensionType;
 import net.minecraft.world.level.levelgen.*;
 import net.minecraft.world.level.levelgen.synth.NormalNoise;
 
 import java.util.List;
-import java.util.stream.Stream;
 
 public class ModNoiseSettingsGenerator {
     public static final ResourceKey<NoiseGeneratorSettings> MOON = ResourceKey.create(Registries.NOISE_SETTINGS,
             new ResourceLocation(KBSpace.MOD_ID, "moon"));
+
+    public static final ResourceKey<NoiseGeneratorSettings> MARS = ResourceKey.create(Registries.NOISE_SETTINGS,
+            new ResourceLocation(KBSpace.MOD_ID, "mars"));
 
 
     private static final ResourceKey<DensityFunction> ZERO = createKey("zero");
@@ -62,16 +59,24 @@ public class ModNoiseSettingsGenerator {
 
     public static void bootstrap(BootstapContext<NoiseGeneratorSettings> pContext) {
         pContext.register(MOON, moon(pContext, false, false));
+        pContext.register(MARS, mars(pContext, false, false));
     }
 
     public static NoiseGeneratorSettings moon(BootstapContext<?> pContext, boolean pAmplified, boolean pLarge) {
         return new NoiseGeneratorSettings(NoiseSettings.create(-64, 384, 1, 2),
                 Blocks.END_STONE.defaultBlockState(), Blocks.AIR.defaultBlockState(),
-                the_moon(pContext.lookup(Registries.DENSITY_FUNCTION), pContext.lookup(Registries.NOISE), pLarge, pAmplified),
-                ModSurfaceRules.makeRules(), List.of(), 63, true, false, false, false);
+                planets(pContext.lookup(Registries.DENSITY_FUNCTION), pContext.lookup(Registries.NOISE), pLarge, pAmplified),
+                ModSurfaceRules.makeMoonRules(), List.of(), 63, true, false, false, false);
     }
 
-    protected static NoiseRouter the_moon(HolderGetter<DensityFunction> pDensityFunctions, HolderGetter<NormalNoise.NoiseParameters> pNoiseParameters, boolean pLarge, boolean pAmplified) {
+    public static NoiseGeneratorSettings mars(BootstapContext<?> pContext, boolean pAmplified, boolean pLarge) {
+        return new NoiseGeneratorSettings(NoiseSettings.create(-64, 384, 1, 2),
+                Blocks.BASALT.defaultBlockState(), Blocks.AIR.defaultBlockState(),
+                planets(pContext.lookup(Registries.DENSITY_FUNCTION), pContext.lookup(Registries.NOISE), pLarge, pAmplified),
+                ModSurfaceRules.makeMarsRules(), List.of(), 63, true, false, false, false);
+    }
+
+    protected static NoiseRouter planets(HolderGetter<DensityFunction> pDensityFunctions, HolderGetter<NormalNoise.NoiseParameters> pNoiseParameters, boolean pLarge, boolean pAmplified) {
         DensityFunction densityfunction4 = getFunction(pDensityFunctions, SHIFT_X);
         DensityFunction densityfunction5 = getFunction(pDensityFunctions, SHIFT_Z);
         DensityFunction densityfunction6 = DensityFunctions.shiftedNoise2d(densityfunction4, densityfunction5, 0.25D, pNoiseParameters.getOrThrow(pLarge ? Noises.TEMPERATURE_LARGE : Noises.TEMPERATURE));

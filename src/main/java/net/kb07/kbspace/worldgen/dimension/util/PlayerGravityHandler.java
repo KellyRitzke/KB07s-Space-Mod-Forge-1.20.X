@@ -17,6 +17,10 @@ public class PlayerGravityHandler {
     public static double moonJumpBoostAmount = 0.4;     // Increase this slightly to fine-tune jump
     public static double moonMaxJumpVelocity = 0.6;     // Prevents jumping too high
 
+    public static double marsGravityMultiplier = 0.2;   // Lower = slower falling
+    public static double marsJumpBoostAmount = 0.6;     // Increase this slightly to fine-tune jump
+    public static double marsMaxJumpVelocity = 0.6;     // Prevents jumping too high
+
     @SubscribeEvent
     public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
         Player player = event.player;
@@ -27,29 +31,43 @@ public class PlayerGravityHandler {
 
         // Check if the player is in the Moon dimension
         if (player.level().dimension().equals(ModDimensions.MOON_LEVEL_KEY)) {
-            if (event.phase == TickEvent.Phase.END) {
-                Vec3 movement = player.getDeltaMovement();
-                boolean isJumping = isPlayerJumping(player);
+            playerGravity(event, moonGravityMultiplier, moonJumpBoostAmount, moonMaxJumpVelocity);
 
-                // **Modify Jumping** (apply a controlled boost)
-                if (isJumping && movement.y > 0 && !player.getAbilities().flying) {
-                    player.setNoGravity(true);
-                    double boostedJump = movement.y + moonJumpBoostAmount;
-                    if (boostedJump > moonMaxJumpVelocity) boostedJump = moonMaxJumpVelocity; // Prevent extreme jumps
-                    player.setDeltaMovement(movement.x, boostedJump, movement.z);
-                }
+        } else if (player.level().dimension().equals(ModDimensions.MARS_LEVEL_KEY)) {
+            playerGravity(event, marsGravityMultiplier, marsJumpBoostAmount, marsMaxJumpVelocity);
 
-                // **Apply Custom Gravity**
-                if (!player.onGround() && !player.getAbilities().flying) {
-                    player.setNoGravity(true);
-                    double newYVelocity = movement.y - (0.08 * moonGravityMultiplier); // Gravity pulls player down
-                    player.setDeltaMovement(movement.x, newYVelocity, movement.z);
-                }
+        }
+        else {
+            player.setNoGravity(false);
+        }
+    }
 
+    public static void playerGravity(TickEvent.PlayerTickEvent event, double gravityMult, double jumpBoostAmount, double maxJumpVelocity) {
+        Player player = event.player;
+
+        if (event.phase == TickEvent.Phase.END) {
+            Vec3 movement = player.getDeltaMovement();
+            boolean isJumping = isPlayerJumping(player);
+
+            // **Modify Jumping** (apply a controlled boost)
+            if (isJumping && movement.y > 0 && !player.getAbilities().flying) {
+                player.setNoGravity(true);
+                double boostedJump = movement.y + jumpBoostAmount;
+                if (boostedJump > maxJumpVelocity) boostedJump = maxJumpVelocity; // Prevent extreme jumps
+                player.setDeltaMovement(movement.x, boostedJump, movement.z);
             }
 
-        } else {
-            player.setNoGravity(false);
+            // **Apply Custom Gravity**
+            if (!player.onGround() && !player.getAbilities().flying) {
+                player.setNoGravity(true);
+                double newYVelocity = movement.y - (0.08 * gravityMult); // Gravity pulls player down
+                player.setDeltaMovement(movement.x, newYVelocity, movement.z);
+            }
+
+            if (player.isFallFlying()) {
+                player.setNoGravity(true);
+            }
+
         }
     }
 

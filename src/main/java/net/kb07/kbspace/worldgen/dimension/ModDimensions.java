@@ -29,6 +29,13 @@ public class ModDimensions {
     public static final ResourceKey<DimensionType> MOON_TYPE = ResourceKey.create(Registries.DIMENSION_TYPE,
             new ResourceLocation(KBSpace.MOD_ID, "the_moon"));
 
+    public static final ResourceKey<LevelStem> MARS_KEY = ResourceKey.create(Registries.LEVEL_STEM,
+            new ResourceLocation(KBSpace.MOD_ID, "mars"));
+    public static final ResourceKey<Level> MARS_LEVEL_KEY = ResourceKey.create(Registries.DIMENSION,
+            new ResourceLocation(KBSpace.MOD_ID, "mars"));
+    public static final ResourceKey<DimensionType> MARS_TYPE = ResourceKey.create(Registries.DIMENSION_TYPE,
+            new ResourceLocation(KBSpace.MOD_ID, "mars"));
+
     public static void bootstrapType(BootstapContext<DimensionType> context) {
 
         context.register(MOON_TYPE, new DimensionType(OptionalLong.empty(),
@@ -47,6 +54,22 @@ public class ModDimensions {
                 1.0f,
                 new DimensionType.MonsterSettings(false, false, ConstantInt.of(0), 0)));
 
+        context.register(MARS_TYPE, new DimensionType(OptionalLong.empty(),
+                false,
+                false,
+                false,
+                false,
+                1.0,
+                true,
+                false,
+                -64,
+                384,
+                384,
+                BlockTags.INFINIBURN_OVERWORLD,
+                new ResourceLocation(KBSpace.MOD_ID, "mars_effect"),
+                1.0f,
+                new DimensionType.MonsterSettings(false, false, ConstantInt.of(0), 0)));
+
     }
 
     public static void bootstrapStem(BootstapContext<LevelStem> context) {
@@ -54,9 +77,13 @@ public class ModDimensions {
         HolderGetter<DimensionType> dimTypes = context.lookup(Registries.DIMENSION_TYPE);
         HolderGetter<NoiseGeneratorSettings> noiseGenSettings = context.lookup(Registries.NOISE_SETTINGS);
 
-        NoiseBasedChunkGenerator wrappedChunkGenerator = new NoiseBasedChunkGenerator(
+        NoiseBasedChunkGenerator moonWrappedChunkGenerator = new NoiseBasedChunkGenerator(
                 new FixedBiomeSource(biomeRegistry.getOrThrow(ModBiomes.MOON)),
                 noiseGenSettings.getOrThrow(ModNoiseSettingsGenerator.MOON));
+
+        NoiseBasedChunkGenerator marsWrappedChunkGenerator = new NoiseBasedChunkGenerator(
+                new FixedBiomeSource(biomeRegistry.getOrThrow(ModBiomes.MARS)),
+                noiseGenSettings.getOrThrow(ModNoiseSettingsGenerator.MARS));
 
         NoiseBasedChunkGenerator noiseBasedChunkGenerator = new NoiseBasedChunkGenerator(
                 MultiNoiseBiomeSource.createFromList(
@@ -71,9 +98,11 @@ public class ModDimensions {
                         ))),
                 noiseGenSettings.getOrThrow(NoiseGeneratorSettings.AMPLIFIED));
 
-        LevelStem stem = new LevelStem(dimTypes.getOrThrow(ModDimensions.MOON_TYPE), wrappedChunkGenerator);
+        LevelStem moonStem = new LevelStem(dimTypes.getOrThrow(ModDimensions.MOON_TYPE), moonWrappedChunkGenerator);
+        LevelStem marsStem = new LevelStem(dimTypes.getOrThrow(ModDimensions.MARS_TYPE), marsWrappedChunkGenerator);
 
-        context.register(MOON_KEY, stem);
+        context.register(MOON_KEY, moonStem);
+        context.register(MARS_KEY, marsStem);
     }
 
 }

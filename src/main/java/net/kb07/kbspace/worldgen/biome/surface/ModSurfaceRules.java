@@ -9,16 +9,31 @@ import net.minecraft.world.level.levelgen.VerticalAnchor;
 public class ModSurfaceRules {
     private static final SurfaceRules.RuleSource DIRT = makeStateRule(Blocks.DIRT);
     private static final SurfaceRules.RuleSource GRASS_BLOCK = makeStateRule(Blocks.GRASS_BLOCK);
-    private static final SurfaceRules.RuleSource END_STONE = makeStateRule(Blocks.END_STONE);
+    private static final SurfaceRules.RuleSource RED_SAND = makeStateRule(Blocks.RED_SAND);
+    private static final SurfaceRules.RuleSource TERRACOTTA = makeStateRule(Blocks.TERRACOTTA);
     private static final SurfaceRules.RuleSource BEDROCK = makeStateRule(Blocks.BEDROCK);
 
 
-    public static SurfaceRules.RuleSource makeRules() {
+    public static SurfaceRules.RuleSource makeMoonRules() {
         SurfaceRules.ConditionSource isAtOrAboveWaterLevel = SurfaceRules.waterBlockCheck(-1, 0);
 
         SurfaceRules.RuleSource grassSurface = SurfaceRules.sequence(SurfaceRules.ifTrue(isAtOrAboveWaterLevel, GRASS_BLOCK), DIRT);
 
         return SurfaceRules.sequence(
+                SurfaceRules.ifTrue(SurfaceRules.verticalGradient("minecraft:bedrock_floor",
+                        VerticalAnchor.aboveBottom(0), VerticalAnchor.aboveBottom(5)), BEDROCK)
+        );
+    }
+
+    public static SurfaceRules.RuleSource makeMarsRules() {
+        SurfaceRules.ConditionSource isAtOrAboveWaterLevel = SurfaceRules.waterBlockCheck(-1, 0);
+
+        SurfaceRules.RuleSource redSandSurface = SurfaceRules.sequence(SurfaceRules.ifTrue(isAtOrAboveWaterLevel, RED_SAND), TERRACOTTA);
+
+        return SurfaceRules.sequence(
+                SurfaceRules.ifTrue(SurfaceRules.isBiome(ModBiomes.MARS),
+                        SurfaceRules.ifTrue(SurfaceRules.abovePreliminarySurface(), redSandSurface)),
+
                 SurfaceRules.ifTrue(SurfaceRules.verticalGradient("minecraft:bedrock_floor",
                         VerticalAnchor.aboveBottom(0), VerticalAnchor.aboveBottom(5)), BEDROCK)
         );

@@ -29,6 +29,7 @@ import net.minecraftforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.awt.*;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -140,6 +141,8 @@ public class RocketEntity extends Entity implements PlayerRideable {
                 this.setDeltaMovement(movement.x, newYVelocity, movement.z);
             } else if (this.level().dimension().equals(ModDimensions.MOON_LEVEL_KEY)) {
                 gravity = PlayerGravityHandler.moonGravityMultiplier;
+            }else if (this.level().dimension().equals(ModDimensions.MARS_LEVEL_KEY)) {
+                gravity = PlayerGravityHandler.marsGravityMultiplier;
             }
 
             if (!this.level().dimension().equals(Level.OVERWORLD)) {
@@ -293,9 +296,19 @@ public class RocketEntity extends Entity implements PlayerRideable {
             // Teleport player
             if (player.level() instanceof ServerLevel serverLevel) {
                 MinecraftServer minecraftServer = serverLevel.getServer();
-                ResourceKey<Level> resourceKey = player.level().dimension() == ModDimensions.MOON_LEVEL_KEY ?
-                        Level.OVERWORLD : ModDimensions.MOON_LEVEL_KEY;
 
+                ResourceKey<Level> resourceKey = null;
+
+                if (targetLevel.dimension().equals(ModDimensions.MOON_LEVEL_KEY)) {
+                    resourceKey = ModDimensions.MOON_LEVEL_KEY;
+                } else if (targetLevel.dimension().equals(ModDimensions.MARS_LEVEL_KEY)) {
+                    resourceKey = ModDimensions.MARS_LEVEL_KEY;
+                }else if (targetLevel.dimension().equals(Level.OVERWORLD)) {
+                    resourceKey = Level.OVERWORLD;
+                }
+
+
+                assert resourceKey != null;
                 ServerLevel portalDimension = minecraftServer.getLevel(resourceKey);
                 if (portalDimension != null && !player.isPassenger()) {
                     BlockPos pos = new BlockPos(player.getBlockX(), player.getBlockY(), player.getBlockZ());

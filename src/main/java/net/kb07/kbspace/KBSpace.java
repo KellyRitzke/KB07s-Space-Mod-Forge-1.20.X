@@ -86,6 +86,7 @@ public class KBSpace {
         @SubscribeEvent
         public static void registerDimensionEffects(RegisterDimensionSpecialEffectsEvent event) {
             event.register(new ResourceLocation(KBSpace.MOD_ID, "moon_effect"), ModDimensionSpecialEffects.MOON_EFFECT);
+            event.register(new ResourceLocation(KBSpace.MOD_ID, "mars_effect"), ModDimensionSpecialEffects.MARS_EFFECT);
         }
 
         @SubscribeEvent
@@ -108,6 +109,7 @@ public class KBSpace {
                         Map<ResourceLocation, DimensionSpecialEffects> effectsMap = (Map<ResourceLocation, DimensionSpecialEffects>) effectsField.get(null);
 
                         effectsMap.put(new ResourceLocation(KBSpace.MOD_ID, "moon_effect"), ModDimensionSpecialEffects.MOON_EFFECT);
+                        effectsMap.put(new ResourceLocation(KBSpace.MOD_ID, "mars_effect"), ModDimensionSpecialEffects.MARS_EFFECT);
                     } catch (Exception e) {
                         e.printStackTrace();
                     }

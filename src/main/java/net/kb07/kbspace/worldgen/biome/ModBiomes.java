@@ -14,10 +14,13 @@ public class ModBiomes {
 
     public static final ResourceKey<Biome> MOON = ResourceKey.create(Registries.BIOME,
             new ResourceLocation(KBSpace.MOD_ID, "the_moon"));
+    public static final ResourceKey<Biome> MARS = ResourceKey.create(Registries.BIOME,
+            new ResourceLocation(KBSpace.MOD_ID, "mars"));
 
     public static void bootstrap(BootstapContext<Biome> context) {
 
         context.register(MOON, moon(context));
+        context.register(MARS, mars(context));
 
     }
 
@@ -44,5 +47,30 @@ public class ModBiomes {
                 .build();
 
     }
+
+    private static Biome mars(BootstapContext<Biome> context) {
+        MobSpawnSettings.Builder spawnBuilder = new MobSpawnSettings.Builder();
+
+        BiomeGenerationSettings.Builder biomeBuilder =
+                new BiomeGenerationSettings.Builder(context.lookup(Registries.PLACED_FEATURE), context.lookup(Registries.CONFIGURED_CARVER));
+
+        return new Biome.BiomeBuilder()
+                .hasPrecipitation(false)
+                .downfall(0.5f)
+                .temperature(0.5f)
+                .generationSettings(biomeBuilder.build())
+                .mobSpawnSettings(spawnBuilder.build())
+                .specialEffects((new BiomeSpecialEffects.Builder())
+                        .fogColor(0xb73d00)
+                        .skyColor(0x000000)
+                        .waterColor(0x3f76e4)
+                        .waterFogColor(0x050533)
+                        .foliageColorOverride(0x71a74d)
+                        .grassColorOverride(0x8eb971)
+                        .build())
+                .build();
+
+    }
+
 
 }

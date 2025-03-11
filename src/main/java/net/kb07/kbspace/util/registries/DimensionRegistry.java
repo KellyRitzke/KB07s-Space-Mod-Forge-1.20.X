@@ -10,7 +10,7 @@ public class DimensionRegistry {
     public static ServerLevel getDimension(String name, MinecraftServer server) {
         if ("earth".equals(name)) return server.getLevel(Level.OVERWORLD);
         if ("moon".equals(name)) return server.getLevel(ModDimensions.MOON_LEVEL_KEY);
-        //if ("mars".equals(name)) return server.getLevel(MARS);
+        if ("mars".equals(name)) return server.getLevel(ModDimensions.MARS_LEVEL_KEY);
         return null;
     }
 }
