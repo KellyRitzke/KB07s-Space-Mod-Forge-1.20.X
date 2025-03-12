@@ -1,11 +1,10 @@
 package net.kb07.kbspace.util.screens;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import net.kb07.kbspace.KBSpace;
 import net.kb07.kbspace.util.packets.PacketHandler;
 import net.kb07.kbspace.util.packets.SpaceDestinationPacket;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.ImageButton;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -16,119 +15,149 @@ import java.util.List;
 public class SpaceSelectionScreen extends Screen {
 
     private static final ResourceLocation SPACE_BACKGROUND = new ResourceLocation(KBSpace.MOD_ID, "textures/gui/space_bg.png");
+    private static final ResourceLocation BUTTON_TEXTURE = new ResourceLocation(KBSpace.MOD_ID, "textures/gui/button.png");
+    private static final ResourceLocation LIST_BACKGROUND_TEXTURE = new ResourceLocation(KBSpace.MOD_ID, "textures/gui/list_background.png");
 
-    private static final List<ResourceLocation> PLANETS = new ArrayList<>();
-    static {
-        PLANETS.add(new ResourceLocation(KBSpace.MOD_ID, "textures/environment/earth.png"));
-        PLANETS.add(new ResourceLocation(KBSpace.MOD_ID, "textures/environment/moon.png"));
-        PLANETS.add(new ResourceLocation(KBSpace.MOD_ID, "textures/environment/mars.png"));
-    }
+    private SelectionState state = SelectionState.SOLAR_SYSTEM;
+    private final List<String> solarSystems = List.of("Milky Way", "Solar System Beta", "Solar System Gamma");
+    private List<String> planets = new ArrayList<>();
+    private List<String> moons = new ArrayList<>();
+    private String selectedSolarSystem;
+    private String selectedPlanet;
 
-    private int selectedPlanet = 0;
-    private float animationProgress = 1.0f; // 1.0 = fully zoomed in, 0.0 = switching
-    private long lastUpdateTime;
     public SpaceSelectionScreen() {
         super(Component.literal("Select Destination"));
     }
 
     @Override
     protected void init() {
-        int centerX = this.width / 2;
-        int centerY = this.height / 2;
+    }
 
-        this.addRenderableWidget(
-                Button.builder(Component.literal("Earth"), button -> {
-                    PacketHandler.sendToServer(new SpaceDestinationPacket("earth"));
-                    this.onClose();
-                }).bounds(centerX - 50, centerY - 40, 100, 20).build()
-        );
+    private void updateOptions(GuiGraphics guiGraphics) {
+        this.clearWidgets();
+        int startX = 11;
+        int startY = 42;
 
-        this.addRenderableWidget(
-                Button.builder(Component.literal("Moon"), button -> {
-                    PacketHandler.sendToServer(new SpaceDestinationPacket("moon"));
-                    this.onClose();
-                }).bounds(centerX - 50, centerY, 100, 20).build()
-        );
+        int buttonWidth = 80;
+        int buttonHeight = 20;
+        int pXTexStart = 6;
+        int pYTexStart = 6;
+        int pYDiffTex = 20;
 
-        this.addRenderableWidget(
-                Button.builder(Component.literal("Mars"), button -> {
-                    PacketHandler.sendToServer(new SpaceDestinationPacket("mars"));
-                    this.onClose();
-                }).bounds(centerX - 50, centerY + 40, 100, 20).build()
-        );
+        // Solar System List
+        for (String solarSystem : solarSystems) {
+            this.addRenderableWidget(new ImageButton(
+                    startX, startY, buttonWidth, buttonHeight,
+                    pXTexStart, pYTexStart, pYDiffTex,
+                    BUTTON_TEXTURE,
+                    button -> {
+                        selectedSolarSystem = solarSystem;
+                        planets = getPlanetsForSolarSystem(solarSystem);
+                        moons.clear();
+                        updateOptions(guiGraphics);
+                    }
+            ));
+            guiGraphics.drawCenteredString(this.font, solarSystem,
+                    startX + (buttonWidth/2), startY + (buttonHeight/2) - 4, 0xFFFFFF);
+            startY += 20;
+        }
 
+        // Planet List (Next Column)
+        if (selectedSolarSystem != null) {
+            startX += 81;
+            startY = 42;
+            for (String planet : planets) {
+                this.addRenderableWidget(new ImageButton(
+                        startX, startY, buttonWidth, buttonHeight,
+                        pXTexStart, pYTexStart, pYDiffTex,
+                        BUTTON_TEXTURE,
+                        button -> {
+                            selectedPlanet = planet;
+                            moons = getMoonsForPlanet(planet);
+                            updateOptions(guiGraphics);
+                        }
+                ));
+                guiGraphics.drawCenteredString(this.font, planet,
+                        startX + (buttonWidth/2), startY + (buttonHeight/2) - 4, 0xFFFFFF);
+                startY += 20;
+            }
+        }
+
+        // Moon List (Next Column)
+        if (selectedPlanet != null) {
+            startX += 81;
+            startY = 42;
+            this.addRenderableWidget(new ImageButton(
+                    startX, startY, buttonWidth, buttonHeight,
+                    pXTexStart, pYTexStart, pYDiffTex,
+                    BUTTON_TEXTURE,
+                    button -> teleportTo(selectedPlanet)
+            ));
+            guiGraphics.drawCenteredString(this.font, "Land",
+                    startX + (buttonWidth/2), startY + (buttonHeight/2) - 4, 0xFFFFFF);
+            startY += 20;
+
+            for (String moon : moons) {
+                this.addRenderableWidget(new ImageButton(
+                        startX, startY, buttonWidth, buttonHeight,
+                        pXTexStart, pYTexStart, pYDiffTex,
+                        BUTTON_TEXTURE,
+                        button -> teleportTo(moon)
+                ));
+                guiGraphics.drawCenteredString(this.font, moon,
+                        startX + (buttonWidth/2), startY + (buttonHeight/2) - 4, 0xFFFFFF);
+                startY += 20;
+            }
+        }
+    }
+
+    private void teleportTo(String destination) {
+        PacketHandler.sendToServer(new SpaceDestinationPacket(destination.toLowerCase()));
+        this.onClose();
     }
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTicks) {
+        int imageX = 82;
+
         renderBackground(guiGraphics);
-        renderPlanets(guiGraphics, partialTicks);
+
+        renderListBackground(guiGraphics, 10, 40); // Solar System List
+        if (selectedSolarSystem != null) renderListBackground(guiGraphics, imageX + 10, 40); // Planet List
+        if (selectedPlanet != null) renderListBackground(guiGraphics, (imageX * 2) + 10, 40); // Moon List
+
+        updateOptions(guiGraphics);
+
         super.render(guiGraphics, mouseX, mouseY, partialTicks);
     }
 
-    public void renderBackground(GuiGraphics guiGraphics) {
-        // Scale the background dynamically
-        guiGraphics.blit(SPACE_BACKGROUND, 0, 0, 0, 0, width, height, width, height);
-    }
-
-    private void renderPlanets(GuiGraphics guiGraphics, float partialTicks) {
-        long currentTime = System.currentTimeMillis();
-        float deltaTime = (currentTime - lastUpdateTime) / 1000.0f;
-        lastUpdateTime = currentTime;
-
-        if (animationProgress < 1.0f) {
-            animationProgress += deltaTime * 2; // Adjust speed of animation
-            if (animationProgress > 1.0f) animationProgress = 1.0f;
-        }
-
-        int centerX = width / 2;
-        int centerY = height / 2;
-
-        float scaleFactor = Math.min(width / 1920.0f, height / 1080.0f); // Base scale on 1920x1080
-
-        for (int i = 0; i < PLANETS.size(); i++) {
-            float scale = (i == selectedPlanet) ? 1.0f + (1.0f - animationProgress) * 0.5f : 1.0f;
-            scale *= scaleFactor; // Scale planets based on screen size
-
-            int offsetX = (int) (((i - selectedPlanet) * 400) * scaleFactor - ((1.0f - animationProgress) * 200 * scaleFactor));
-            int planetSize = (int) (200 * scale);
-
-            int x = centerX + offsetX - planetSize / 2;
-            int y = centerY - planetSize / 2;
-
-            RenderSystem.setShaderTexture(0, PLANETS.get(i));
-            guiGraphics.blit(PLANETS.get(i), x, y, 0, 0, planetSize, planetSize, planetSize, planetSize);
-        }
-    }
-
-
-    /**
-     * Key Codes:
-     *      Left arrow: 263
-     *      Right arrow: 262
-     *      A key: 65
-     *      D key: 68
-     */
-
-
     @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        if (keyCode == 68) { // Right
-            if (selectedPlanet < PLANETS.size() - 1) {
-                selectedPlanet++;
-                animationProgress = 0.0f;
-            }
-        } else if (keyCode == 65) { // Left
-            if (selectedPlanet > 0) {
-                selectedPlanet--;
-                animationProgress = 0.0f;
-            }
-        } else if (keyCode == 256) { // Escape Key
-            this.minecraft.setScreen(null); // Close screen
-        }
-        return super.keyPressed(keyCode, scanCode, modifiers);
+    public void renderBackground(GuiGraphics pGuiGraphics) {
+        pGuiGraphics.blit(SPACE_BACKGROUND, 0, 0, 0, 0, width, height, width, height);
+        super.renderBackground(pGuiGraphics);
     }
 
+    private void renderListBackground(GuiGraphics guiGraphics, int x, int y) {
+        guiGraphics.blit(LIST_BACKGROUND_TEXTURE, x, y, 0, 0, 82, 202, 82, 202);
+    }
 
+    private List<String> getPlanetsForSolarSystem(String solarSystem) {
+        return switch (solarSystem) {
+            case "Milky Way" -> List.of("Earth", "Mars");
+            case "Solar System Beta" -> List.of("Jupiter", "Saturn");
+            default -> List.of();
+        };
+    }
 
+    private List<String> getMoonsForPlanet(String planet) {
+        return switch (planet) {
+            case "Earth" -> List.of("Moon");
+            case "Mars" -> List.of("Phobos", "Deimos");
+            default -> List.of();
+        };
+    }
+
+    private enum SelectionState {
+        SOLAR_SYSTEM, PLANET, MOON
+    }
 }
