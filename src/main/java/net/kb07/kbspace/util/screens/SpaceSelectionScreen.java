@@ -1,5 +1,6 @@
 package net.kb07.kbspace.util.screens;
 
+import com.mojang.blaze3d.systems.RenderSystem;
 import net.kb07.kbspace.KBSpace;
 import net.kb07.kbspace.util.packets.PacketHandler;
 import net.kb07.kbspace.util.packets.SpaceDestinationPacket;
@@ -8,6 +9,7 @@ import net.minecraft.client.gui.components.ImageButton;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import org.lwjgl.opengl.GL11;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -40,8 +42,8 @@ public class SpaceSelectionScreen extends Screen {
 
         int buttonWidth = 80;
         int buttonHeight = 20;
-        int pXTexStart = 6;
-        int pYTexStart = 6;
+        int pXTexStart = 0;
+        int pYTexStart = 0;
         int pYDiffTex = 20;
 
         // Solar System List
@@ -49,7 +51,7 @@ public class SpaceSelectionScreen extends Screen {
             this.addRenderableWidget(new ImageButton(
                     startX, startY, buttonWidth, buttonHeight,
                     pXTexStart, pYTexStart, pYDiffTex,
-                    BUTTON_TEXTURE,
+                    BUTTON_TEXTURE, 80, 60,
                     button -> {
                         selectedSolarSystem = solarSystem;
                         planets = getPlanetsForSolarSystem(solarSystem);
@@ -59,7 +61,7 @@ public class SpaceSelectionScreen extends Screen {
             ));
             guiGraphics.drawCenteredString(this.font, solarSystem,
                     startX + (buttonWidth/2), startY + (buttonHeight/2) - 4, 0xFFFFFF);
-            startY += 20;
+            startY += buttonHeight - 1;
         }
 
         // Planet List (Next Column)
@@ -70,7 +72,7 @@ public class SpaceSelectionScreen extends Screen {
                 this.addRenderableWidget(new ImageButton(
                         startX, startY, buttonWidth, buttonHeight,
                         pXTexStart, pYTexStart, pYDiffTex,
-                        BUTTON_TEXTURE,
+                        BUTTON_TEXTURE, 80, 60,
                         button -> {
                             selectedPlanet = planet;
                             moons = getMoonsForPlanet(planet);
@@ -79,7 +81,7 @@ public class SpaceSelectionScreen extends Screen {
                 ));
                 guiGraphics.drawCenteredString(this.font, planet,
                         startX + (buttonWidth/2), startY + (buttonHeight/2) - 4, 0xFFFFFF);
-                startY += 20;
+                startY += buttonHeight - 1;
             }
         }
 
@@ -90,7 +92,7 @@ public class SpaceSelectionScreen extends Screen {
             this.addRenderableWidget(new ImageButton(
                     startX, startY, buttonWidth, buttonHeight,
                     pXTexStart, pYTexStart, pYDiffTex,
-                    BUTTON_TEXTURE,
+                    BUTTON_TEXTURE, 80, 60,
                     button -> teleportTo(selectedPlanet)
             ));
             guiGraphics.drawCenteredString(this.font, "Land",
@@ -101,12 +103,12 @@ public class SpaceSelectionScreen extends Screen {
                 this.addRenderableWidget(new ImageButton(
                         startX, startY, buttonWidth, buttonHeight,
                         pXTexStart, pYTexStart, pYDiffTex,
-                        BUTTON_TEXTURE,
+                        BUTTON_TEXTURE, 80, 60,
                         button -> teleportTo(moon)
                 ));
                 guiGraphics.drawCenteredString(this.font, moon,
                         startX + (buttonWidth/2), startY + (buttonHeight/2) - 4, 0xFFFFFF);
-                startY += 20;
+                startY += buttonHeight - 1;
             }
         }
     }
@@ -120,11 +122,13 @@ public class SpaceSelectionScreen extends Screen {
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTicks) {
         int imageX = 82;
 
+        RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
         renderBackground(guiGraphics);
 
         renderListBackground(guiGraphics, 10, 40); // Solar System List
-        if (selectedSolarSystem != null) renderListBackground(guiGraphics, imageX + 10, 40); // Planet List
-        if (selectedPlanet != null) renderListBackground(guiGraphics, (imageX * 2) + 10, 40); // Moon List
+        if (selectedSolarSystem != null) renderListBackground(guiGraphics, imageX + 9, 40); // Planet List
+        if (selectedPlanet != null) renderListBackground(guiGraphics, (imageX * 2) + 8, 40); // Moon List
 
         updateOptions(guiGraphics);
 
@@ -138,6 +142,8 @@ public class SpaceSelectionScreen extends Screen {
     }
 
     private void renderListBackground(GuiGraphics guiGraphics, int x, int y) {
+        RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
         guiGraphics.blit(LIST_BACKGROUND_TEXTURE, x, y, 0, 0, 82, 202, 82, 202);
     }
 

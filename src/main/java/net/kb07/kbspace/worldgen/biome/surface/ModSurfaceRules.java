@@ -15,9 +15,6 @@ public class ModSurfaceRules {
 
 
     public static SurfaceRules.RuleSource makeMoonRules() {
-        SurfaceRules.ConditionSource isAtOrAboveWaterLevel = SurfaceRules.waterBlockCheck(-1, 0);
-
-        SurfaceRules.RuleSource grassSurface = SurfaceRules.sequence(SurfaceRules.ifTrue(isAtOrAboveWaterLevel, GRASS_BLOCK), DIRT);
 
         return SurfaceRules.sequence(
                 SurfaceRules.ifTrue(SurfaceRules.verticalGradient("minecraft:bedrock_floor",
@@ -26,13 +23,20 @@ public class ModSurfaceRules {
     }
 
     public static SurfaceRules.RuleSource makeMarsRules() {
-        SurfaceRules.ConditionSource isAtOrAboveWaterLevel = SurfaceRules.waterBlockCheck(-1, 0);
-
-        SurfaceRules.RuleSource redSandSurface = SurfaceRules.sequence(SurfaceRules.ifTrue(isAtOrAboveWaterLevel, RED_SAND), TERRACOTTA);
+        SurfaceRules.ConditionSource isSurface = SurfaceRules.abovePreliminarySurface();
+        SurfaceRules.ConditionSource notSteep = SurfaceRules.not(SurfaceRules.steep());
 
         return SurfaceRules.sequence(
                 SurfaceRules.ifTrue(SurfaceRules.isBiome(ModBiomes.MARS),
-                        SurfaceRules.ifTrue(SurfaceRules.abovePreliminarySurface(), redSandSurface)),
+                        SurfaceRules.ifTrue(isSurface,
+                                SurfaceRules.sequence(
+                                        SurfaceRules.ifTrue(notSteep, RED_SAND), // Top layer of red sand
+                                        SurfaceRules.ifTrue(notSteep, TERRACOTTA), // Below red sand
+                                        SurfaceRules.ifTrue(notSteep, TERRACOTTA), // Another terracotta layer
+                                        TERRACOTTA // Third layer of terracotta
+                                )
+                        )
+                ),
 
                 SurfaceRules.ifTrue(SurfaceRules.verticalGradient("minecraft:bedrock_floor",
                         VerticalAnchor.aboveBottom(0), VerticalAnchor.aboveBottom(5)), BEDROCK)
