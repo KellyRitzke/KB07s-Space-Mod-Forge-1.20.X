@@ -38,7 +38,7 @@ public class SpaceSelectionScreen extends Screen {
     private void updateOptions(GuiGraphics guiGraphics) {
         this.clearWidgets();
         int startX = 11;
-        int startY = 42;
+        int startY = 41;
 
         int buttonWidth = 80;
         int buttonHeight = 20;
@@ -61,13 +61,13 @@ public class SpaceSelectionScreen extends Screen {
             ));
             guiGraphics.drawCenteredString(this.font, solarSystem,
                     startX + (buttonWidth/2), startY + (buttonHeight/2) - 4, 0xFFFFFF);
-            startY += buttonHeight - 1;
+            startY += buttonHeight;
         }
 
         // Planet List (Next Column)
         if (selectedSolarSystem != null) {
             startX += 81;
-            startY = 42;
+            startY = 41;
             for (String planet : planets) {
                 this.addRenderableWidget(new ImageButton(
                         startX, startY, buttonWidth, buttonHeight,
@@ -81,14 +81,14 @@ public class SpaceSelectionScreen extends Screen {
                 ));
                 guiGraphics.drawCenteredString(this.font, planet,
                         startX + (buttonWidth/2), startY + (buttonHeight/2) - 4, 0xFFFFFF);
-                startY += buttonHeight - 1;
+                startY += buttonHeight;
             }
         }
 
         // Moon List (Next Column)
         if (selectedPlanet != null) {
             startX += 81;
-            startY = 42;
+            startY = 41;
             this.addRenderableWidget(new ImageButton(
                     startX, startY, buttonWidth, buttonHeight,
                     pXTexStart, pYTexStart, pYDiffTex,
@@ -97,7 +97,7 @@ public class SpaceSelectionScreen extends Screen {
             ));
             guiGraphics.drawCenteredString(this.font, "Land",
                     startX + (buttonWidth/2), startY + (buttonHeight/2) - 4, 0xFFFFFF);
-            startY += 20;
+            startY += buttonHeight;
 
             for (String moon : moons) {
                 this.addRenderableWidget(new ImageButton(
@@ -108,7 +108,7 @@ public class SpaceSelectionScreen extends Screen {
                 ));
                 guiGraphics.drawCenteredString(this.font, moon,
                         startX + (buttonWidth/2), startY + (buttonHeight/2) - 4, 0xFFFFFF);
-                startY += buttonHeight - 1;
+                startY += buttonHeight;
             }
         }
     }

@@ -64,10 +64,6 @@ public class PlayerGravityHandler {
                 player.setDeltaMovement(movement.x, newYVelocity, movement.z);
             }
 
-            if (player.isFallFlying()) {
-                player.setNoGravity(true);
-            }
-
         }
     }
 
