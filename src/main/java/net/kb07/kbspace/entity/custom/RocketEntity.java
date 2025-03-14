@@ -85,12 +85,11 @@ public class RocketEntity extends Entity implements PlayerRideable {
 
 
         // Check if the rocket was falling in the previous tick
-        if (this.getDeltaMovement().y < -1) {
-            this.wasFallingFast = true; // Mark that the rocket was falling
-            this.wasFallingSlow = false;
-        } else if (this.wasFallingFast && this.getDeltaMovement().y > -0.75 && !(this.getDeltaMovement().y == 0)) {
-            this.wasFallingFast = false;
-            this.wasFallingSlow = true;
+        if (this.level().dimension().equals(Level.OVERWORLD)) {
+            fallingSpeed(-1.5);
+        }
+        if (!this.level().dimension().equals(Level.OVERWORLD)) {
+            fallingSpeed(-1);
         }
 
         // If the rocket was falling and now it's on the ground, trigger explosion
@@ -102,7 +101,6 @@ public class RocketEntity extends Entity implements PlayerRideable {
         } else if (this.wasFallingSlow && this.onGround()) {
             this.hasLanded = true;
         }
-
 
 
         if (this.onGround()) {
@@ -125,6 +123,16 @@ public class RocketEntity extends Entity implements PlayerRideable {
         }
 
         this.move(MoverType.SELF, this.getDeltaMovement());
+    }
+
+    private void fallingSpeed(double speed) {
+        if (this.getDeltaMovement().y < speed) {
+            this.wasFallingFast = true; // Mark that the rocket was falling
+            this.wasFallingSlow = false;
+        } else if (this.wasFallingFast && this.getDeltaMovement().y > speed && !(this.getDeltaMovement().y == 0)) {
+            this.wasFallingFast = false;
+            this.wasFallingSlow = true;
+        }
     }
 
     private void applyCustomGravity() {
