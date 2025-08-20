@@ -1,6 +1,7 @@
 package net.kb07.kbspace.datagen;
 
 import net.kb07.kbspace.KBSpace;
+import net.kb07.kbspace.item.ModItems;
 import net.minecraft.data.PackOutput;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
@@ -16,6 +17,8 @@ public class ModItemModelProvider extends ItemModelProvider {
 
     @Override
     protected void registerModels() {
+
+        simpleItem(ModItems.ROCKET);
 
     }
 

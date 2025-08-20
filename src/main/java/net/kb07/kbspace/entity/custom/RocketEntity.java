@@ -1,6 +1,7 @@
 package net.kb07.kbspace.entity.custom;
 
 import net.kb07.kbspace.entity.ModEntities;
+import net.kb07.kbspace.item.ModItems;
 import net.kb07.kbspace.util.packets.OpenSpaceDestinationPacket;
 import net.kb07.kbspace.util.packets.PacketHandler;
 import net.kb07.kbspace.util.screens.SpaceSelectionScreen;
@@ -20,9 +21,18 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.SimpleMenuProvider;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.*;
+import net.minecraft.world.entity.ai.attributes.Attribute;
+import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
+import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.animal.Animal;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.vehicle.Boat;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.network.NetworkHooks;
 import net.minecraftforge.network.PacketDistributor;
@@ -34,6 +44,10 @@ import java.util.Objects;
 import java.util.UUID;
 
 public class RocketEntity extends Entity implements PlayerRideable {
+
+    private static final EntityDataAccessor<Integer> DATA_ID_HURT = SynchedEntityData.defineId(RocketEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Integer> DATA_ID_HURTDIR = SynchedEntityData.defineId(RocketEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Float> DATA_ID_DAMAGE = SynchedEntityData.defineId(RocketEntity.class, EntityDataSerializers.FLOAT);
 
     private static final EntityDataAccessor<Boolean> LAUNCHING = SynchedEntityData.defineId(RocketEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> CANLAUNCH = SynchedEntityData.defineId(RocketEntity.class, EntityDataSerializers.BOOLEAN);
@@ -54,6 +68,69 @@ public class RocketEntity extends Entity implements PlayerRideable {
         super(pEntityType, pLevel);
     }
 
+    public boolean hurt(DamageSource pSource, float pAmount) {
+        if (this.isInvulnerableTo(pSource)) {
+            return false;
+        } else if (!this.level().isClientSide && !this.isRemoved()) {
+            this.setHurtDir(-this.getHurtDir());
+            this.setHurtTime(10);
+            this.setDamage(this.getDamage() + pAmount * 10.0F);
+            this.markHurt();
+            this.gameEvent(GameEvent.ENTITY_DAMAGE, pSource.getEntity());
+            boolean flag = pSource.getEntity() instanceof Player && ((Player)pSource.getEntity()).getAbilities().instabuild;
+            if (flag || this.getDamage() > 40.0F) {
+                if (!flag && this.level().getGameRules().getBoolean(GameRules.RULE_DOENTITYDROPS)) {
+                    this.destroy(pSource);
+                }
+
+                this.discard();
+
+                if (!this.isRemoved()) {
+                    this.ejectPassengers();
+                    this.remove(RemovalReason.DISCARDED);
+                }
+            }
+
+            return true;
+        } else {
+            return true;
+        }
+    }
+
+    protected void destroy(DamageSource pDamageSource) {
+        this.spawnAtLocation(ModItems.ROCKET.get());
+    }
+
+    public void setHurtDir(int pHurtDirection) {
+        this.entityData.set(DATA_ID_HURTDIR, pHurtDirection);
+    }
+
+    public int getHurtDir() {
+        return this.entityData.get(DATA_ID_HURTDIR);
+    }
+
+    public void setHurtTime(int pHurtTime) {
+        this.entityData.set(DATA_ID_HURT, pHurtTime);
+    }
+
+    public int getHurtTime() {
+        return this.entityData.get(DATA_ID_HURT);
+    }
+
+    public void setDamage(float pDamageTaken) {
+        this.entityData.set(DATA_ID_DAMAGE, pDamageTaken);
+    }
+
+    public float getDamage() {
+        return this.entityData.get(DATA_ID_DAMAGE);
+    }
+
+    public void animateHurt(float pYaw) {
+        this.setHurtDir(-this.getHurtDir());
+        this.setHurtTime(10);
+        this.setDamage(this.getDamage() * 11.0F);
+    }
+
     @Override
     public @NotNull InteractionResult interact(Player player, InteractionHand hand) {
         if (!this.level().isClientSide()) {
@@ -70,6 +147,15 @@ public class RocketEntity extends Entity implements PlayerRideable {
 
     @Override
     public void tick() {
+
+        if (this.getHurtTime() > 0) {
+            this.setHurtTime(this.getHurtTime() - 1);
+        }
+
+        if (this.getDamage() > 0.0F) {
+            this.setDamage(this.getDamage() - 1.0F);
+        }
+
         super.tick();
         this.setNoGravity(true);
 
@@ -287,7 +373,6 @@ public class RocketEntity extends Entity implements PlayerRideable {
             // Remove the rocket from the current dimension before spawning a new one
             if (!this.isRemoved()) {
                 this.ejectPassengers();
-                System.out.println("hasTeleported: " + hasTeleported);
                 this.remove(RemovalReason.CHANGED_DIMENSION);
             }
 
@@ -298,7 +383,6 @@ public class RocketEntity extends Entity implements PlayerRideable {
                 newRocket.moveTo(currentPos.x, currentPos.y, currentPos.z, this.getYRot(), this.getXRot());// Copy teleport flag to the new rocket
                 newRocket.hasTeleported = this.hasTeleported;
                 targetLevel.addFreshEntity(newRocket);
-
             }
 
             // Teleport player
@@ -336,6 +420,10 @@ public class RocketEntity extends Entity implements PlayerRideable {
         this.entityData.define(LAUNCHING, false); // Default value
         this.entityData.define(CANLAUNCH, false); // Default value
         this.entityData.define(SLOWDOWN, false); // Default value
+
+        this.entityData.define(DATA_ID_HURT, 0);
+        this.entityData.define(DATA_ID_HURTDIR, 1);
+        this.entityData.define(DATA_ID_DAMAGE, 0.0F);
     }
 
     @Override
