@@ -29,6 +29,7 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.animal.Animal;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.vehicle.Boat;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.Level;
@@ -228,14 +229,14 @@ public class RocketEntity extends Entity implements PlayerRideable {
 
             Vec3 movement = this.getDeltaMovement();
 
-            if (this.level().dimension().equals(Level.OVERWORLD)) {
+            if (this.level().dimension().equals(Level.OVERWORLD) || this.level().dimension().equals(ModDimensions.VEILMERE_LEVEL_KEY)) {
                 // drag aka air resistance
                 double newYVelocity = movement.y - 0.08;
                 newYVelocity *= 0.96;
                 this.setDeltaMovement(movement.x, newYVelocity, movement.z);
             } else if (this.level().dimension().equals(ModDimensions.MOON_LEVEL_KEY)) {
                 gravity = PlayerGravityHandler.moonGravityMultiplier;
-            }else if (this.level().dimension().equals(ModDimensions.MARS_LEVEL_KEY)) {
+            } else if (this.level().dimension().equals(ModDimensions.MARS_LEVEL_KEY)) {
                 gravity = PlayerGravityHandler.marsGravityMultiplier;
             }
 
@@ -395,7 +396,9 @@ public class RocketEntity extends Entity implements PlayerRideable {
                     resourceKey = ModDimensions.MOON_LEVEL_KEY;
                 } else if (targetLevel.dimension().equals(ModDimensions.MARS_LEVEL_KEY)) {
                     resourceKey = ModDimensions.MARS_LEVEL_KEY;
-                }else if (targetLevel.dimension().equals(Level.OVERWORLD)) {
+                } else if (targetLevel.dimension().equals(ModDimensions.VEILMERE_LEVEL_KEY)) {
+                    resourceKey = ModDimensions.VEILMERE_LEVEL_KEY;
+                } else if (targetLevel.dimension().equals(Level.OVERWORLD)) {
                     resourceKey = Level.OVERWORLD;
                 }
 
@@ -433,5 +436,11 @@ public class RocketEntity extends Entity implements PlayerRideable {
 
     @Override
     protected void addAdditionalSaveData(CompoundTag compoundTag) {
+    }
+
+    @Nullable
+    @Override
+    public ItemStack getPickResult() {
+        return ModItems.ROCKET.get().getDefaultInstance();
     }
 }

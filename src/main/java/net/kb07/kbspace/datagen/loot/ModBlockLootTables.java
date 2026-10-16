@@ -28,6 +28,17 @@ public class ModBlockLootTables extends BlockLootSubProvider {
         this.add(ModBlocks.MOON_IRON_ORE.get(),
                 block -> createOreDrop(ModBlocks.MOON_IRON_ORE.get(), Items.RAW_IRON));
 
+        dropSelf(ModBlocks.STRIPPED_PURPLEHEART_WOOD.get());
+        dropSelf(ModBlocks.STRIPPED_PURPLEHEART_LOG.get());
+        dropSelf(ModBlocks.PURPLEHEART_WOOD.get());
+        dropSelf(ModBlocks.PURPLEHEART_LOG.get());
+
+        dropSelf(ModBlocks.PURPLEHEART_PLANKS.get());
+
+        dropSelf(ModBlocks.PURPLEHEART_SAPLING.get());
+        add(ModBlocks.PURPLEHEART_LEAVES.get(), block ->
+                createLeavesDrops(block, ModBlocks.PURPLEHEART_SAPLING.get(), NORMAL_LEAVES_SAPLING_CHANCES));
+
     }
 
     protected LootTable.Builder createCopperLikeOreDrops(Block pBlock, Item item) {

@@ -1,6 +1,16 @@
 {
     "block.kbspace.moon_iron_ore": "Moon Iron Ore",
 
+    "block.kbspace.purpleheart_wood": "Purpleheart Wood",
+    "block.kbspace.purpleheart_log": "Purpleheart Log",
+    "block.kbspace.stripped_purpleheart_wood": "Stripped Purpleheart Wood",
+    "block.kbspace.stripped_purpleheart_log": "Stripped Purpleheart Log",
+
+    "block.kbspace.purpleheart_planks": "Purpleheart Planks",
+    "block.kbspace.purpleheart_leaves": "Purpleheart Leaves",
+    "block.kbspace.purpleheart_sapling": "Purpleheart Sapling",
+
+
     "item.kbspace.rocket": "Rocket",
 
     "creativetab.kb_space_tab": "KB's Space Mod",

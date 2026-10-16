@@ -19,6 +19,14 @@ public class ModCreativeModeTabs {
                     .title(Component.translatable("creativetab.kb_space_tab"))
                     .displayItems((pParameters, pOutput) -> {
 
+                        pOutput.accept(ModBlocks.PURPLEHEART_WOOD.get());
+                        pOutput.accept(ModBlocks.PURPLEHEART_LOG.get());
+                        pOutput.accept(ModBlocks.STRIPPED_PURPLEHEART_WOOD.get());
+                        pOutput.accept(ModBlocks.STRIPPED_PURPLEHEART_LOG.get());
+                        pOutput.accept(ModBlocks.PURPLEHEART_PLANKS.get());
+                        pOutput.accept(ModBlocks.PURPLEHEART_LEAVES.get());
+                        pOutput.accept(ModBlocks.PURPLEHEART_SAPLING.get());
+
                         pOutput.accept(ModBlocks.MOON_IRON_ORE.get());
                         pOutput.accept(ModItems.ROCKET.get());
 

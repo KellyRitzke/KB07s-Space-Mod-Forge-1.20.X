@@ -13,6 +13,19 @@ public class ModSurfaceRules {
     private static final SurfaceRules.RuleSource TERRACOTTA = makeStateRule(Blocks.TERRACOTTA);
     private static final SurfaceRules.RuleSource BEDROCK = makeStateRule(Blocks.BEDROCK);
 
+    private static final SurfaceRules.ConditionSource isAtOrAboveWaterLevel = SurfaceRules.waterBlockCheck(-1, 0);
+    public static final SurfaceRules.RuleSource GRASS_SURFACE = SurfaceRules.sequence(SurfaceRules.ifTrue(isAtOrAboveWaterLevel, GRASS_BLOCK), DIRT);
+
+
+    protected static SurfaceRules.RuleSource makeVeilmereRules() {
+
+        return SurfaceRules.sequence(
+                SurfaceRules.ifTrue(SurfaceRules.isBiome(ModBiomes.CYAN_PLAINS), GRASS_SURFACE),
+
+                SurfaceRules.ifTrue(SurfaceRules.ON_FLOOR, GRASS_SURFACE)
+        );
+
+    }
 
     public static SurfaceRules.RuleSource makeMoonRules() {
 

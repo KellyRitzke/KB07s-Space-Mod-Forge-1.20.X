@@ -18,10 +18,32 @@ public class ModBlockTagGenerator extends BlockTagsProvider {
 
     @Override
     protected void addTags(HolderLookup.Provider pProvider) {
-        this.tag(BlockTags.MINEABLE_WITH_PICKAXE)
+        tag(BlockTags.LOGS_THAT_BURN)
+                .add(ModBlocks.STRIPPED_PURPLEHEART_WOOD.get())
+                .add(ModBlocks.STRIPPED_PURPLEHEART_LOG.get())
+                .add(ModBlocks.PURPLEHEART_WOOD.get())
+                .add(ModBlocks.PURPLEHEART_LOG.get());
+
+        tag(BlockTags.LOGS)
+                .add(ModBlocks.STRIPPED_PURPLEHEART_WOOD.get())
+                .add(ModBlocks.STRIPPED_PURPLEHEART_LOG.get())
+                .add(ModBlocks.PURPLEHEART_WOOD.get())
+                .add(ModBlocks.PURPLEHEART_LOG.get());
+
+        tag(BlockTags.PLANKS)
+                .add(ModBlocks.PURPLEHEART_PLANKS.get());
+
+        tag(BlockTags.MINEABLE_WITH_AXE)
+                .add(ModBlocks.STRIPPED_PURPLEHEART_WOOD.get())
+                .add(ModBlocks.STRIPPED_PURPLEHEART_LOG.get())
+                .add(ModBlocks.PURPLEHEART_WOOD.get())
+                .add(ModBlocks.PURPLEHEART_LOG.get())
+                .add(ModBlocks.PURPLEHEART_PLANKS.get());
+
+        tag(BlockTags.MINEABLE_WITH_PICKAXE)
                 .add(ModBlocks.MOON_IRON_ORE.get());
 
-        this.tag(BlockTags.NEEDS_STONE_TOOL)
+        tag(BlockTags.NEEDS_STONE_TOOL)
                 .add(ModBlocks.MOON_IRON_ORE.get());
 
     }

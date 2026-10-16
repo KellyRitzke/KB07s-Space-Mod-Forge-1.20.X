@@ -5,21 +5,27 @@ import net.kb07.kbspace.worldgen.biome.surface.ModSurfaceRules;
 import net.minecraft.core.HolderGetter;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.data.worldgen.BootstapContext;
+import net.minecraft.data.worldgen.SurfaceRuleData;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.biome.OverworldBiomeBuilder;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.dimension.DimensionType;
 import net.minecraft.world.level.levelgen.*;
 import net.minecraft.world.level.levelgen.synth.NormalNoise;
 
 import java.util.List;
 
+import static net.minecraft.world.level.levelgen.NoiseRouterData.*;
+
 public class ModNoiseSettingsGenerator {
-    public static final ResourceKey<NoiseGeneratorSettings> MOON = ResourceKey.create(Registries.NOISE_SETTINGS,
-            new ResourceLocation(KBSpace.MOD_ID, "moon"));
 
-    public static final ResourceKey<NoiseGeneratorSettings> MARS = ResourceKey.create(Registries.NOISE_SETTINGS,
-            new ResourceLocation(KBSpace.MOD_ID, "mars"));
+    // Custom Noise
+    public static final ResourceKey<NoiseGeneratorSettings> VEILMERE = registerKey("veilmere");
 
+    // Normal Planet Noise
+    public static final ResourceKey<NoiseGeneratorSettings> MOON = registerKey("moon");
+    public static final ResourceKey<NoiseGeneratorSettings> MARS = registerKey("mars");
 
     private static final ResourceKey<DensityFunction> ZERO = createKey("zero");
     private static final ResourceKey<DensityFunction> Y = createKey("y");
@@ -58,8 +64,108 @@ public class ModNoiseSettingsGenerator {
     private static final ResourceKey<DensityFunction> SPAGHETTI_2D = createKey("overworld/caves/spaghetti_2d");
 
     public static void bootstrap(BootstapContext<NoiseGeneratorSettings> pContext) {
+
+
+        HolderGetter<NormalNoise.NoiseParameters> holdergetter = pContext.lookup(Registries.NOISE);
+        HolderGetter<DensityFunction> holdergetter1 = pContext.lookup(Registries.DENSITY_FUNCTION);
+
+        // Custom Noise
+        pContext.register(VEILMERE, new NoiseGeneratorSettings(
+                new NoiseSettings(-64, 384, 1, 1),
+                Blocks.STONE.defaultBlockState(),
+                Blocks.WATER.defaultBlockState(),
+                veilmere(holdergetter1, holdergetter),
+                SurfaceRuleData.overworld(),
+                new OverworldBiomeBuilder().spawnTarget(),
+                63,
+                false,
+                true,
+                true,
+                false
+        ));
+
+        // Normal Planet Noise
         pContext.register(MOON, moon(pContext, false, false));
         pContext.register(MARS, mars(pContext, false, false));
+    }
+
+    protected static NoiseRouter veilmere(HolderGetter<DensityFunction> densityFunctions, HolderGetter<NormalNoise.NoiseParameters> noiseParameters) {
+        DensityFunction densityfunction = DensityFunctions.noise(noiseParameters.getOrThrow(Noises.AQUIFER_BARRIER), 0.5);
+        DensityFunction densityfunction1 = DensityFunctions.noise(noiseParameters.getOrThrow(Noises.AQUIFER_FLUID_LEVEL_FLOODEDNESS), 0.67);
+        DensityFunction densityfunction2 = DensityFunctions.noise(noiseParameters.getOrThrow(Noises.AQUIFER_FLUID_LEVEL_SPREAD), 0.7142857142857143);
+        DensityFunction densityfunction3 = DensityFunctions.noise(noiseParameters.getOrThrow(Noises.AQUIFER_LAVA));
+
+        ResourceKey<DensityFunction> SHIFT_X = ResourceKey.create(Registries.DENSITY_FUNCTION, new ResourceLocation("shift_x"));
+        ResourceKey<DensityFunction> SHIFT_Z = ResourceKey.create(Registries.DENSITY_FUNCTION, new ResourceLocation("shift_z"));
+        DensityFunction densityfunction4 = getFunction(densityFunctions, SHIFT_X);
+        DensityFunction densityfunction5 = getFunction(densityFunctions, SHIFT_Z);
+
+        DensityFunction densityfunction6 = DensityFunctions.shiftedNoise2d(
+                densityfunction4, densityfunction5, 0.25, noiseParameters.getOrThrow(Noises.TEMPERATURE)
+        );
+        DensityFunction densityfunction7 = DensityFunctions.shiftedNoise2d(
+                densityfunction4, densityfunction5, 0.25, noiseParameters.getOrThrow(Noises.VEGETATION)
+        );
+
+        DensityFunction densityfunction8 = getFunction(densityFunctions, FACTOR);
+        DensityFunction densityfunction9 = getFunction(densityFunctions, DEPTH);
+
+        DensityFunction densityfunction10 = noiseGradientDensity(DensityFunctions.cache2d(densityfunction8), densityfunction9);
+        ResourceKey<DensityFunction> SLOPED_CHEESE = ResourceKey.create(Registries.DENSITY_FUNCTION, new ResourceLocation("overworld/sloped_cheese"));
+        DensityFunction densityfunction11 = getFunction(densityFunctions, SLOPED_CHEESE);
+        ResourceKey<DensityFunction> ENTRANCES = ResourceKey.create(Registries.DENSITY_FUNCTION, new ResourceLocation("overworld/caves/entrances"));
+
+        DensityFunction densityfunction12 = DensityFunctions.min(
+                densityfunction11, DensityFunctions.mul(DensityFunctions.constant(5.0), getFunction(densityFunctions, ENTRANCES))
+        );
+        DensityFunction densityfunction13 = DensityFunctions.rangeChoice(
+                densityfunction11, -1000000.0, 1.5625, densityfunction12, underground(densityFunctions, noiseParameters, densityfunction11)
+        );
+
+        ResourceKey<DensityFunction> NOODLE = ResourceKey.create(Registries.DENSITY_FUNCTION, new ResourceLocation("overworld/caves/noodle"));
+        DensityFunction densityfunction14 = DensityFunctions.min(postProcess(slideOverworld(false, densityfunction13)), getFunction(densityFunctions, NOODLE));
+        ResourceKey<DensityFunction> Y = ResourceKey.create(Registries.DENSITY_FUNCTION, new ResourceLocation("y"));
+        DensityFunction densityfunction15 = getFunction(densityFunctions, Y);
+
+        // Something with ores?? OreVeinifier.VeinType.values()
+        int i = 1;
+        int j = 3;
+        DensityFunction densityfunction16 = yLimitedInterpolatable(
+                densityfunction15, DensityFunctions.noise(noiseParameters.getOrThrow(Noises.ORE_VEININESS), 1.5, 1.5), i, j, 0
+        );
+
+        float f = 4.0F;
+        DensityFunction densityfunction17 = yLimitedInterpolatable(
+                densityfunction15, DensityFunctions.noise(noiseParameters.getOrThrow(Noises.ORE_VEIN_A), 4.0, 4.0), i, j, 0
+        )
+                .abs();
+        DensityFunction densityfunction18 = yLimitedInterpolatable(
+                densityfunction15, DensityFunctions.noise(noiseParameters.getOrThrow(Noises.ORE_VEIN_B), 4.0, 4.0), i, j, 0
+        )
+                .abs();
+
+        DensityFunction densityfunction19 = DensityFunctions.add(DensityFunctions.constant(-0.08F), DensityFunctions.max(densityfunction17, densityfunction18));
+        DensityFunction densityfunction20 = DensityFunctions.noise(noiseParameters.getOrThrow(Noises.ORE_GAP));
+
+        return new NoiseRouter(
+                densityfunction, // barrier
+                densityfunction1, // fluid floodedness
+                densityfunction2, // fluid spread
+                densityfunction3, // lava
+                densityfunction6, // temperature
+                densityfunction7, // vegetation
+
+                getFunction(densityFunctions, CONTINENTS), // continents
+                getFunction(densityFunctions, EROSION), // erosion
+                densityfunction9, // depth
+                getFunction(densityFunctions, RIDGES), // ridges
+
+                slideOverworld(false, DensityFunctions.add(densityfunction10, DensityFunctions.constant(-0.703125)).clamp(-64.0, 64.0)), // initial density
+                densityfunction14, // final density
+                densityfunction16, // vein toggle
+                densityfunction19, // vein ridged
+                densityfunction20 // vein gap
+        );
     }
 
     public static NoiseGeneratorSettings moon(BootstapContext<?> pContext, boolean pAmplified, boolean pLarge) {
@@ -263,6 +369,10 @@ public class ModNoiseSettingsGenerator {
                 return pValue < 0.5D ? 1.5D : 2.0D;
             }
         }
+    }
+
+    public static ResourceKey<NoiseGeneratorSettings> registerKey(String name) {
+        return ResourceKey.create(Registries.NOISE_SETTINGS, new ResourceLocation(KBSpace.MOD_ID, name));
     }
 
 }

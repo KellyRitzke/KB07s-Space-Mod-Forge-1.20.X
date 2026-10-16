@@ -26,7 +26,7 @@ public class SpaceSelectionScreen extends Screen {
     private static final Logger log = LoggerFactory.getLogger(SpaceSelectionScreen.class);
 
     private SelectionState state = SelectionState.SOLAR_SYSTEM;
-    private final List<String> solarSystems = List.of("Milky Way", "Solar System Beta");
+    private final List<String> solarSystems = List.of("Milky Way", "Veilmere Solar System");
     private List<String> planets = new ArrayList<>();
     private List<String> moons = new ArrayList<>();
     private String selectedSolarSystem;
@@ -192,7 +192,7 @@ public class SpaceSelectionScreen extends Screen {
     private List<String> getPlanetsForSolarSystem(String solarSystem) {
         return switch (solarSystem) {
             case "Milky Way" -> List.of("Earth", "Mars");
-            case "Solar System Beta" -> List.of("Jupiter", "Saturn");
+            case "Veilmere Solar System" -> List.of("Veilmere", "Jupiter", "Saturn");
             default -> List.of();
         };
     }
@@ -201,6 +201,7 @@ public class SpaceSelectionScreen extends Screen {
         return switch (planet) {
             case "Earth" -> List.of("Moon");
             case "Mars" -> List.of("Phobos", "Deimos");
+            case "Veilmere" -> List.of("V-Moon");
             default -> List.of();
         };
     }
